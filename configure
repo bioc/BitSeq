@@ -1,0 +1,11 @@
+#/bin/sh
+
+SAMVARS=`echo 'cat(system.file("usretc", .Platform[["r_arch"]] , "Rsamtools.mk", package="Rsamtools", mustWork=TRUE))' | "${R_HOME}/bin/R" --vanilla --slave`
+
+echo "include ${SAMVARS}" > src/Makevars
+echo "include Makevars.common" >> src/Makevars
+
+#SAMVARSW=$(shell echo 'cat(system.file("usretc", .Platform[["r_arch"]], "Rsamtools.mk", package="Rsamtools", mustWork=TRUE))' | "${R_HOME}/bin/R" --vanilla --slave)
+
+#echo "include ${SAMVARSW}" > src/Makevars.win
+#echo "include Makevars.common" >> src/Makevars.win

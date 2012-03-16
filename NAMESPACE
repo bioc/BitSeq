@@ -1,0 +1,8 @@
+import(zlibbioc)
+useDynLib("BitSeq")
+
+
+#exportPattern("^[^\\._]")
+export("parseAlignment","estimateExpression","getMeanVariance","estimateHyperPar","estimateDE");
+export("getDE","getExpression","loadSamples","writeSamples");
+

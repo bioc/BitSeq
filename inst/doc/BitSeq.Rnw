@@ -1,0 +1,282 @@
+%\VignetteIndexEntry{BitSeq User Guide}
+%\VignetteKeywords{GeneExpression, TranscriptExpression, RNA-seq}
+%\VignetteDepends{}
+%\VignettePackage{BitSeq}
+\documentclass[a4paper]{article}
+\usepackage{url}
+%\usepackage[authoryear,round]{natbib}
+
+\title{BitSeq User Guide}
+\author{Peter Glaus, Antti Honkela and Magnus Rattray}
+
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rpackage}[1]{{\textit{#1}}}
+\newcommand{\bitseq}{\Rpackage{BitSeq}}
+
+\newcommand{\Rvar}[1]{{\texttt{#1}}}
+
+% NON-R resources 
+% use other markup than R*
+\newcommand{\COMM}[1]{{\texttt{#1}}}
+\newcommand{\FILE}[1]{{\textit{#1}}}
+
+\SweaveOpts{keep.source=TRUE}
+
+\begin{document}
+\maketitle
+
+<<echo=FALSE, eval=TRUE>>=
+options(width = 40)
+@
+
+\section{Abstract}
+ 
+The \bitseq{} package is targeted for transcript expression analysis and differential expression analysis of RNA-seq data in two stage process. 
+In the first stage it uses Bayesian inference methodology to infer expression of individual transcripts from individual RNA-seq experiments. 
+The second stage of \bitseq{} embraces the differential expression analysis of transcript expression. 
+Providing expression estimates from replicates of multiple conditions, Log-Normal model of the estimates is used for inferring the condition mean transcript expression and ranking the transcripts based on the likelihood of differential expression.
+
+\section{Citing \bitseq{}}
+
+The \bitseq{} package is based on probabilistic models and inference methods described in the manuscript \cite{paperArxiv}.
+For citing \bitseq{} in publications please refer to the manuscript above and to the source of the software.
+
+%\subsection{Example usage}
+%\label{section:Example}
+
+\section{Installing the \bitseq{} package}
+
+%The recommended way to install \bitseq{} is to use the
+%\Rfunction{biocLite} function available from the bioconductor
+%website.
+%
+%<< eval=FALSE >>==
+%source("http://www.bioconductor.org/biocLite.R")
+%biocLite("BitSeq")
+%@
+
+To install the BitSeq software, unpack the software and run
+\begin{verbatim}
+R CMD INSTALL BitSeq
+\end{verbatim}
+
+To load the package start R and run
+<<>>=
+library(BitSeq)
+@ 
+
+\section{Preparing data}
+
+The size of data normally analysed by \bitseq{} and results represented by samples from posterior distribution usually ranges in Gigabytes.
+Keeping this kind of datasets in memory within R environment would be rather inefficient and in most cases unnecessary, thus most of the data used within \bitseq{} is loaded and saved directly to the local hard drive.
+
+The input for \bitseq{} package can be either SAM or BAM file containing aligned reads, as well as reference Fasta file. 
+These files do not need to be loaded into the environment as \bitseq{} will read the data from disk space.
+The transcriptome Fasta file can be either downloaded from Ensembl website \footnote{link for homo sapiens, release 66:
+\url{ftp://ftp.ensembl.org/pub/release-66/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh37.66.cdna.all.fa.gz} }
+or constructed by UCSC genome browser at \url{http://genome.ucsc.edu/cgi-bin/hgTables}. 
+In this example we will use file \FILE{ensSelect1.fasta} which contains sequence of all transcripts for five genes from the Ensembl homo sapiens, release 65 annotation.
+
+For the alignment of reads to transcriptome we recommend using software \COMM{bowtie}, which is able to report all valid alignments for all the reads.
+The following \COMM{bash} commands can be used to create the SAM file with alignments:
+\begin{Schunk}
+\begin{Sinput}
+# create bowtie reference index for the annotation
+$ bowtie-build -f --ntoa ensSelect1.fasta ensSelect1-index
+# align reads in data-c0b0.fastq against index
+$ bowtie -q -v 3 -3 0 -p 4 -a -m 100 --sam ensSelect1-index \
+  data-c0b0.fastq data-c0b0.sam
+\end{Sinput}
+\end{Schunk}
+
+In the following examples we will be using the \FILE{data-c0b0.sam} file provided with the package. 
+To make the life easier we set our current directory to the \FILE{extdata} directory.
+<<>>=
+setwd(system.file("extdata",package="BitSeq"));
+@
+
+\section{Basic use}
+
+\subsection{Estimating expression}
+
+To estimate expression we use the function \Rfunction{getExpression}, which takes as an input the SAM file with alignments as well as reference Fasta file that was used for the alignment.
+The function returns a \Robject{list} in which the first item \Rvar{exp} is a \Robject{DataFrame} with expression mean and variance of each transcript.
+The second item \Rvar{fn} is a file name of a file containing all the expression samples, which are used in the later DE analysis.
+The log option tells the function to return mean and variance of logged samples and the last three options, which are parameters for the sampling algorithm, are passed to the \Rfunction{estimateExpression} function used for expression inference.
+<<>>=
+res1 <- getExpression("data-c0b0.sam",
+   "ensSelect1.fasta",
+   log = TRUE,
+   MCMC_burnIn=200,
+   MCMC_samplesN=200,
+   MCMC_scaleReduction=1.1)
+@
+To view histogram of log RPKM expression use:
+<<eval=FALSE >>=
+hist(res1$exp$mean)
+@
+
+We can load the expression samples using function \Rfunction{loadSamples}, which returns \Robject{DataFrame} containing all expression samples.
+<<>>=
+samples1 <- loadSamples(res1$fn)
+@
+Following command produces plot showing correlation between two transcript expression estimates: 
+<<eval=FALSE >>=
+plot( unlist(s2["ENST00000436661",]), 
+   unlist(s2["ENST00000373501",]))
+@
+
+The \Rfunction{getExpression} function first computes probabilities for every alignment and then uses this data in Markov chain Monte Carlo algorithm which samples from the posterior distribution of transcript expression.
+Both these steps are computationally very expensive and can take several hours to finish. 
+In case of MCMC sampling, which has to converge to the correct posterior distribution this can take more than day for extensive data.
+
+\subsection{Identifying differentially expressed transcripts}
+
+In the differential expression analysis we will use the expression samples produced in first step as well as expression samples from other experiments provided with the package.
+It is essential to use biological replicates in both conditions in order to account for biological variation which could otherwise cause false positive DE calls.
+<<>>=
+cond1Files = c(res1$fn,"data-c0b1.rpkm")
+cond2Files = c("data-c1b1.rpkm","data-c1b1.rpkm")
+@
+We use the function \Rfunction{getDE} to infer the Probability of Positive Log Ratio for each transcript.
+The function again returns \Robject{list} with first item \Rvar{pplr} containing \Robject{DataFrame} with PPLR and other information.
+The second item \Rvar{fn} contains list of filenames with the names of produced files.
+Using the option\Rvar{samples=TRUE}, the function creates also files containing the condition mean expression samples.
+<<>>=
+de1 <- getDE(cond1Files, cond2Files, 
+   samples=TRUE)
+print(de1$fn)
+@
+
+Now we can rank the transcripts based on the PPLR value to identify the ones with the highest probability of being differentially expressed:
+<<>>=
+head( de1$pplr[ order(abs(0.5-de1$pplr$pplr), decreasing=TRUE ), ], 5)
+@
+
+\section{Advanced use}
+
+Both expression estimation and identification of differentially expressed transcripts involves multiple steps which are independent. 
+Computing these steps independently might be useful for keeping intermediate results in case of crash or error. 
+As BitSeq makes extensive use of local files, it is essential to set path to working directory containing alignment files and which will be used for storing results of individual steps.
+In this example we use the \FILE{extdata} directory provided with the package:
+<<>>=
+setwd(system.file("extdata",package="BitSeq"))
+@
+
+\subsection{Stage 1 - Transcript expression analysis}
+
+\subsubsection{Pre-processing alignments}
+
+In the pre-processing step, the  \Rfunction{parseAlignment} function reads the SAM file and assigns a probability to every valid alignment.
+These probabilities are saved into \FILE{.prob} file and are the direct input for the expression estimation. 
+We have to specify the reference file which is used for identifying base mismatches and we use uniform model for the read distribution along transcript:
+<<>>=
+parseAlignment( "data-c0b0.sam", 
+   outFile = "data-c0b0.prob", 
+   trSeqFile = "ensSelect1.fasta",
+   trInfoFile = "data.tr",
+   verbose = TRUE )
+@
+The program pass the SAM file twice and produces the \FILE{data-c0b0.prob} file with the alignment probabilities as well as transcript information file \FILE{data.tr} which contains transcript names and lengths extracted from the SAM file.
+
+\subsubsection{Estimating transcript expression}
+
+The \Rfunction{estimateExpression} function implements a generative model of RNA-seq data and infers the transcript expression using Markov chain Monte Carlo algorithm.
+The default MCMC algorithm is the Collapsed Gibbs sampling which converges faster than regular Gibbs sampling (selectable by option \Robject{gibbs=TRUE}.
+It is the most time consuming part of the \bitseq{} analysis process as it uses multiple independent chains to sample the expression values and it iterates until the chains converge to the same distribution. 
+
+The following example runs the sampler using the \FILE{.prob} file from previous step, produces expression in RPKM measure and produces files with the prefix \FILE{data-c0b0}. 
+It will produce two files, file \FILE{data-c0b0.rpkm} will contain a row for each transcript with \Rvar{MCMC\_samplesSave} RPKM expression samples from every chain. 
+The second file \FILE{data-c0b0.thetaMeans} will contain the mean relative expression values for every transcript.
+
+<<keep.source=FALSE >>=
+estimateExpression( "data-c0b0.prob", 
+   outFile = "data-c0b0", 
+   outputType = "RPKM",
+   trInfoFile = "data.tr",
+   MCMC_burnIn = 200,
+   MCMC_samplesN = 200,
+   MCMC_samplesSave = 100,
+   MCMC_scaleReduction = 1.1,
+   MCMC_chainsN = 2 )
+@
+
+The behavior of the sampling algorithm can be adjusted by optional arguments, such as \Rvar{MCMC\_chainsN} which selects the number of chains.
+After producing \Rvar{MCMC\_burnIn} burn-in samples, the algorithm produces first \Rvar{MCMC\_samplesN} samples from each chain in the first iteration.
+After each iteration, the possible scale reduction of marginal posterior variance $\widehat{R}$ is computed for each transcript expression and the ten highest values are reported.
+If the average of ten highest possible scale reductions is less than the \Rvar{MCMC\_scaleReduction} parameter, then the sampler produces one last iteration during which subset of \Rvar{MCMC\_samplesSave} MCMC samples is recorded from each chain.
+Otherwise the program continues with next iteration in which it produces twice as many samples.
+The program terminates either after reaching the target scale reduction or after iteration which produces \Rvar{MCMC\_samplesNmax} samples.
+All these parameters can be set also within a parameters file specified by the option \Rvar{parFile} with the advantage that the parameters such as \Rvar{MCMC\_scaleReduction} or \Rvar{MCMC\_scaleReduction} can be adjusted while the sampler is running, example of the parameters file \FILE{parameters1.txt} is provided in the \FILE{extdata} directory.
+
+Again, we can view the resulting file (\FILE{data-c0b0.rpkm} in this case) using the function \Rfunction{loadSamples}.
+<<eval=FALSE >>=
+loadSamples("data-c0b0.rpkm")
+@
+
+\subsection{Stage 2 - Differential expression analysis}
+
+\subsubsection{Preparing for Differential Expression analysis}
+
+In the differential expression analysis we are comparing samples from two different conditions.
+Also in order to estimate biological variance of transcript expression, we have to use data from at least one extra biological replicates. 
+We first specify the files containing expression samples from the Stage 1, using file \FILE{data-c0b0.rpkm} computed in previous example and three other files provided with the package:
+<<>>=
+cond1Files = c("data-c0b0.rpkm","data-c0b1.rpkm")
+cond2Files = c("data-c1b1.rpkm","data-c1b1.rpkm")
+@
+The estimation of expression specific hyperparameters for the DE model requires pre computing joint mean expression over all experiments using the \Rfunction{getMeanVariance} function. 
+As the DE model uses logged expression samples, we have to compute the mean and variance of logged expression samples:
+<<>>=
+getMeanVariance(c(cond1Files,cond2Files), 
+   outFile = "data.means",
+   log = TRUE )
+@
+
+\subsubsection{Estimating model hyperparameters}
+
+The hyperparameters for the model are estimated from the entire data using Metropolis-Hastings MCMC algorithm.
+The values are smoothed afterwards using the non-parametric Lowess smoothing algorithm:
+<<>>=
+estimateHyperPar( outFile = "data.par",
+   cond1 = cond1Files, 
+   cond2 = cond2Files,
+   meanFile = "data.means",
+   verbose = TRUE )
+@
+
+\subsubsection{Inferring condition mean expression and calculating Probability of Positive Log Ratio}
+
+The model for Differential Expression analysis uses the posterior samples from expression analysis to infer samples of the mean expression for each transcript in every condition.
+Function \Rfunction{estimateDE} computes the samples and uses them to compute the Probability of Positive Log Ratio, which is the probability of a transcript being up-regulated in the first condition as well as inverse probability of transcript being down-regulated in the first condition.
+The PPLR with confidence intervals, mean $\log_2$ fold change and mean condition mean expression are saved into the final output file with extension \FILE{.pplr} and prefix specified by the option \Rvar{outFile}:
+<<>>=
+estimateDE(cond1Files, cond2Files,
+   outFile = "data",
+   parFile = "data.par" )
+@
+
+In case one is interested in the condition mean expression samples as well, they can be obtained by using the \Rvar{samples} flag:
+<<>>=
+estimateDE(cond1Files, cond2Files,
+   outFile = "data",
+   parFile = "data.par",
+   samples = TRUE )
+@
+This produces three extra files, the first two \FILE{data-C0.est}, \FILE{data-C1.est} containing the condition means for each condition and the third file \FILE{data.estVar} containing samples of inferred variance for the first condition.
+
+
+\bibliographystyle{plainnat}
+%\bibliography{bitseq}
+
+\begin{thebibliography}{10}
+
+\bibitem{paperArxiv}
+Glaus, P., Honkela, A. and Rattray, M. (2012)
+\newblock Identifying differentially expressed transcripts from RNA-seq data with biological variation.
+\newblock {\tt arXiv:1109.0863v2 [q-bio.GN]}.
+
+\end{thebibliography}
+
+\end{document}

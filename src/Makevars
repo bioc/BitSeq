@@ -1,0 +1,2 @@
+include /home/mcarlson/arch/x86_64/R-devel/library/Rsamtools/usretc//Rsamtools.mk
+include Makevars.common

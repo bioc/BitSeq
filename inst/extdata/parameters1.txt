@@ -1,0 +1,27 @@
+# parameters:
+
+# length of burnIn
+burnIn 1000
+
+# initial number of samples, doubles every time targetScaleReduction is not met, until it reaches sampleNmax
+samplesN 1000
+# max number of samples generated in one iteration
+samplesNmax 30000
+
+# number of samples actually recorded from each chain
+samplesSave 500
+
+# number of parallel chains
+chainsN 4
+
+# target scale reduction for the "worst" parameters
+# this parameter decides end of sampling
+# if you want to end simulation increase it, this file is read every time sampling finished another sampleN samples
+targetScaleReduction 1.2
+
+#dirAlpha 1
+#dirBeta 1
+#betaAlpha 10
+#betaBeta 2
+
+
