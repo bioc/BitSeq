@@ -42,24 +42,15 @@ Providing expression estimates from replicates of multiple conditions, Log-Norma
 The \bitseq{} package is based on probabilistic models and inference methods described in the manuscript \cite{paperArxiv}.
 For citing \bitseq{} in publications please refer to the manuscript above and to the source of the software.
 
-%\subsection{Example usage}
-%\label{section:Example}
 
 \section{Installing the \bitseq{} package}
 
-%The recommended way to install \bitseq{} is to use the
-%\Rfunction{biocLite} function available from the bioconductor
-%website.
-%
-%<< eval=FALSE >>==
-%source("http://www.bioconductor.org/biocLite.R")
-%biocLite("BitSeq")
-%@
+The recommended way to install \bitseq{} is to use the \Rfunction{biocLite} function available from the bioconductor website.
 
-To install the BitSeq software, unpack the software and run
-\begin{verbatim}
-R CMD INSTALL BitSeq
-\end{verbatim}
+<<eval=FALSE >>=
+source("http://www.bioconductor.org/biocLite.R")
+biocLite("BitSeq")
+@
 
 To load the package start R and run
 <<>>=
