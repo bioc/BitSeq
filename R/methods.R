@@ -78,7 +78,8 @@ getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, ty
    meanFile <- paste(outPrefix, "mean", sep=".");
    getMeanVariance(c(outFile), meanFile, log=log );
    means <- loadSamples( meanFile )
-   colnames(means)<-c("mean","variance");
+   means[,1] <- sqrt(means[,1])
+   colnames(means)<-c("mean","stdev");
    return(list(exp=means , fn=outFile));
 }
 

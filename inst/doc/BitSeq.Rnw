@@ -92,9 +92,9 @@ setwd(system.file("extdata",package="BitSeq"));
 \subsection{Estimating expression}
 
 To estimate expression we use the function \Rfunction{getExpression}, which takes as an input the SAM file with alignments as well as reference Fasta file that was used for the alignment.
-The function returns a \Robject{list} in which the first item \Rvar{exp} is a \Robject{DataFrame} with expression mean and variance of each transcript.
+The function returns a \Robject{list} in which the first item \Rvar{exp} is a \Robject{DataFrame} with expression mean and standard deviation of each transcript.
 The second item \Rvar{fn} is a file name of a file containing all the expression samples, which are used in the later DE analysis.
-The log option tells the function to return mean and variance of logged samples and the last three options, which are parameters for the sampling algorithm, are passed to the \Rfunction{estimateExpression} function used for expression inference.
+The log option tells the function to return mean and standard deviation of logged samples and the last three options, which are parameters for the sampling algorithm, are passed to the \Rfunction{estimateExpression} function used for expression inference.
 <<>>=
 res1 <- getExpression("data-c0b0.sam",
    "ensSelect1.fasta",

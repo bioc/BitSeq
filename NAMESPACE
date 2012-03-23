@@ -3,6 +3,6 @@ useDynLib("BitSeq")
 
 
 #exportPattern("^[^\\._]")
-export("parseAlignment","estimateExpression","getMeanVariance","estimateHyperPar","estimateDE");
+export("parseAlignment","estimateExpression","getMeanVariance","estimateHyperPar","estimateDE","getGeneExpression","getWithinGeneExpression");
 export("getDE","getExpression","loadSamples","writeSamples");
 

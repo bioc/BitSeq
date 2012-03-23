@@ -2,7 +2,7 @@
 \alias{getExpression}
 \title{Estimate transcript expression}
 \description{
-Estimate expression of transcripts. Starting from alignment and reference files function function handles the entire process of expression analysis resulting in transcript expression means and variances together with file containing all the expression samples.
+Estimate expression of transcripts. Starting from alignment and reference files function function handles the entire process of expression analysis resulting in transcript expression means and standard deviation together with file containing all the expression samples.
 }
 \usage{
 getExpression(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM", log=FALSE, ... )
@@ -23,7 +23,7 @@ In case of non-uniform read distribution, it first produces approximate estimate
 }
 \value{
 \code{list} with items:
-\item{exp}{\code{DataFrame} with transcript expression mean and variance}
+\item{exp}{\code{DataFrame} with transcript expression mean and standard deviation}
 \item{fn}{name of the file containing all the expression samples}
 }
 \author{Peter Glaus}

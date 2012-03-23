@@ -6,6 +6,7 @@
 using namespace std;
 
 void buildTime(char *argv0){
+   return ; // dont want to print compile information
    string compileDate = __DATE__;
    string compileTime = __TIME__;
    message("### %s build: %s %s\n",argv0,compileDate.c_str(),compileTime.c_str());
