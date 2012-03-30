@@ -5,7 +5,7 @@ Imports: IRanges
 LinkingTo: Rsamtools, zlibbioc
 Title: Transcript expression inference and differential expression
         analysis for RNA-seq data
-Version: 0.99.2
+Version: 1.0.0
 Date: 2012-03-23
 Author: Peter Glaus, Antti Honkela and Magnus Rattray
 Maintainer: Peter Glaus <glaus@cs.man.ac.uk>
