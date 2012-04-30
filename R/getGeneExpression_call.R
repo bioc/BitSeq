@@ -1,5 +1,5 @@
 
-getGeneExpression <- function(sampleFile, outFile=NULL, trInfoFile=NULL){
+getGeneExpression <- function(sampleFile, outFile=NULL, trInfoFile=NULL, pretend=FALSE){
    if(is.null(trInfoFile)){
       trInfoFile=.changeExt(sampleFile);
    }
@@ -16,7 +16,11 @@ getGeneExpression <- function(sampleFile, outFile=NULL, trInfoFile=NULL){
    }
    args <- c('getGeneExpression', sampleFile, '--outFile', outFile, '--trInfoFile', trInfoFile);
 
-   argc <- length(args);
-   result <- .C("_getGeneExpression", as.integer(argc), as.character(args));
+   if(pretend){
+      print(paste(args,collapse=" "))
+   }else{
+      argc <- length(args);
+      result <- .C("_getGeneExpression", as.integer(argc), as.character(args));
+   }
    return(outFile);
 }

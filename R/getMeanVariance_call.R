@@ -2,9 +2,9 @@
 #   args.addOptionB("l","log","log",0,"Use logged values.");
 #   args.addOptionS("t","type","type",0,"Type of variance, possible values: [sample,sqDif] for sample variance or squared difference.","sample");
 
-getMeanVariance <- function(sampleFiles, outFile, log=NULL, type=NULL, verbose=NULL){
+getMeanVariance <- function(sampleFiles, outFile, log=NULL, type=NULL, verbose=NULL, pretend=FALSE){
 
-   args <- c('getMeanVariance', sampleFiles, '--outFile', outFile);
+   args <- c('getVariance', sampleFiles, '--outFile', outFile);
    if ((!is.null(log)) && (log)) {
       args <- c(args, '--log')
    }
@@ -15,7 +15,11 @@ getMeanVariance <- function(sampleFiles, outFile, log=NULL, type=NULL, verbose=N
       args <- c(args, '--verbose')
    }
 
-   argc <- length(args);
-   ## dyn.load(paste("src/getVariance", .Platform$dynlib.ext, sep=""));
-   result <- .C("_getVariance", as.integer(argc), as.character(args));
+   if(pretend){
+      print(paste(args,collapse=" "))
+   }else{
+      argc <- length(args);
+      ## dyn.load(paste("src/getVariance", .Platform$dynlib.ext, sep=""));
+      result <- .C("_getVariance", as.integer(argc), as.character(args));
+   }
 }

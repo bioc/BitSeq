@@ -15,18 +15,18 @@
 
 
 ## just for checking validity of arguments passed to eE from getExpression
-.argCheck.eE <- function(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, MCMC_samplesSave=NULL, MCMC_samplesNmax=NULL, MCMC_chainsN=NULL, MCMC_scaleReduction=NULL, MCMC_dirAlpha=NULL, verbose=NULL){
+.argCheck.eE <- function(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, MCMC_samplesSave=NULL, MCMC_samplesNmax=NULL, MCMC_chainsN=NULL, MCMC_scaleReduction=NULL, MCMC_dirAlpha=NULL, verbose=NULL, pretend=FALSE){
    return(TRUE);
 }
 
-estimateExpression <- function(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, MCMC_samplesSave=NULL, MCMC_samplesNmax=NULL, MCMC_chainsN=NULL, MCMC_scaleReduction=NULL, MCMC_dirAlpha=NULL, verbose=NULL){
+estimateExpression <- function(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, MCMC_samplesSave=NULL, MCMC_samplesNmax=NULL, MCMC_chainsN=NULL, MCMC_scaleReduction=NULL, MCMC_dirAlpha=NULL, verbose=NULL, pretend=FALSE){
 ## , procN=NULL
-   args <- c('estimateExpression',probFile, '--outFile', outFile)
+   args <- c('estimateExpression',probFile, '--outPrefix', outFile)
    if (!is.null(parFile)){
       args <- c(args, '--parFile', parFile )
    }
    if (!is.null(outputType)) {
-      args <- c(args, '--outputType', outputType)
+      args <- c(args, '--outType', outputType)
    }
    if ((!is.null(gibbs)) && (gibbs)){
         args <- c(args, '--gibbs')
@@ -66,7 +66,11 @@ estimateExpression <- function(probFile, outFile, parFile=NULL, outputType=NULL,
    }
    ## print(args)
 
-   argc <- length(args);
-   ## dyn.load(paste("src/estimateExpression", .Platform$dynlib.ext, sep=""));
-   result <- .C('_estimateExpression', as.integer(argc), as.character(args));
+   if(pretend){
+      print(paste(args,collapse=" "))
+   }else{
+      argc <- length(args);
+      ## dyn.load(paste("src/estimateExpression", .Platform$dynlib.ext, sep=""));
+      result <- .C('_estimateExpression', as.integer(argc), as.character(args));
+   }
 }

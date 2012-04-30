@@ -4,9 +4,9 @@
 #  args.addOptionD("l","lambda0","lambda0",0,"Parameter lambda_0.",LAMBDA_0);
 #  args.addOptionD("c","confidencePerc","cf",0,"Percentage for confidence intervals.", 5);
 
-estimateDE <- function( cond1, cond2, outFile, parFile, lambda0=NULL, samples=NULL, confidencePerc=NULL, verbose=NULL ){
+estimateDE <- function( cond1, cond2, outFile, parFile, lambda0=NULL, samples=NULL, confidencePerc=NULL, verbose=NULL, pretend=FALSE ){
    
-   args <- c('estimateDE',cond1,'C',cond2, '--outFile', outFile , '--parameters', parFile);
+   args <- c('estimateDE',cond1,'C',cond2, '--outPrefix', outFile , '--parameters', parFile)
    if (!is.null(lambda0)) {
       args <- c(args, '--lambda0', lambda0)
    }
@@ -21,7 +21,11 @@ estimateDE <- function( cond1, cond2, outFile, parFile, lambda0=NULL, samples=NU
       args <- c(args, '--verbose')
    }
 
-   argc <- length(args);
-   ##dyn.load(paste("src/estimateDE", .Platform$dynlib.ext, sep=""));
-   result <- .C("_estimateDE", as.integer(argc), as.character(args));
+   if(pretend){
+      print(paste(args,collapse=" "))
+   }else{
+      argc <- length(args);
+      ##dyn.load(paste("src/estimateDE", .Platform$dynlib.ext, sep=""))
+      result <- .C("_estimateDE", as.integer(argc), as.character(args))
+   }
 }

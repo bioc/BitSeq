@@ -5,7 +5,9 @@
   Compute probability of alignments and save them into \emph{.prob} file.
 }
 \usage{
-parseAlignment( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL, expressionFile=NULL, readsN=NULL, uniform=TRUE, lenMu=NULL, lenSigma=NULL, verbose=NULL, veryVerbose=NULL)
+parseAlignment( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL, 
+      expressionFile=NULL, readsN=NULL, uniform=TRUE, lenMu=NULL, lenSigma=NULL, 
+      verbose=NULL, veryVerbose=NULL, pretend=FALSE)
 }
 \arguments{
 \item{alignFile}{File containing read alignments.}
@@ -23,6 +25,7 @@ parseAlignment( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL
 %\item{procN}{Maximum number of threads to be used.}
 \item{verbose}{Verbose output.}
 \item{veryVerbose}{Very verbose output.}
+\item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 }
 \details{
 This function uses the alignments and reference file to assign probability to each alignment.
@@ -36,7 +39,8 @@ It uses either bias-corrected or uniform model for the read distribution, assume
 \author{Peter Glaus}
 \seealso{\code{\link{estimateExpression}}}
 \examples{\dontrun{
-parseAlignment(alignFile="data.sam", outFile="data.prob", trSeqFile="trReference.fa" ,trInfoFile="data.tr")
+parseAlignment(alignFile="data.sam", outFile="data.prob", 
+      trSeqFile="trReference.fa" ,trInfoFile="data.tr")
 }}
 
 \keyword{alignment probability }

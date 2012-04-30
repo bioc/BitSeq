@@ -3,13 +3,14 @@
 \title{Estimate Probability of Positive Log Ratio}
 \description{Using expression samples, program estimates the probability of differential expression for each transcript.}
 \usage{
-getDE( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL )
+getDE( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, pretend=FALSE )
 }
 \arguments{
 \item{cond1}{List of files containing the expression samples for condition 1.}
 \item{cond2}{List of files containing the expression samples for condition 2.}
 \item{outPrefix}{Prefix for the output files. Otherwise program creates temporary files, which are only valid for current R session.}
 \item{samples}{Produce samples of condition mean expression apart from PPLR and confidence.}
+\item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 \item{trInfoFile}{Transcript information file providing the names of transcripts.}
 }
 \details{

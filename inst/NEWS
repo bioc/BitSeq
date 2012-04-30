@@ -1,0 +1,14 @@
+Package: BitSeq
+===============
+
+Version: 1.0.1 (30.4.2012)
+Version: 1.1.1 (30.4.2012)
+
+- fixed bug in estimateExpression (reading file with probabilities occasionally failed when transcript information file was not specified) 
+- improved manual, replaced overflowing lines
+- added option "pretend" to produce C++ calls 
+
+
+Version: 1.0.0
+
+- First Bioconductor release of BitSeq

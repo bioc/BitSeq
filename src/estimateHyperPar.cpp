@@ -55,14 +55,14 @@ string programDescription =
    args.addOptionS("o","outFile","outFileName",1,"Name of the output file.");
    args.addOptionS("p","paramsAllFile","paramsAllFileName",0,"Name of the file to which to store all parameter values generated prior to lowess smoothing.");
    args.addOptionS("","meanFile","meanFileName",0,"Name of the file containing joint mean and variance.");
-   args.addOptionL("g","gourpsNumber","groupsN",0,"Number of groups of transcript of similar size.",200);
+   args.addOptionL("g","groupsNumber","groupsN",0,"Number of groups of transcript of similar size.",200);
    args.addOptionL("s","samplesNumber","samplesN",0,"Number of samples generated for each group.",SAMPLES_N);
    args.addOptionD("l","lambda0","lambda0",0,"Precision scaling parameter lambda0.",0.5);
    args.addOptionD("","exThreshold","exT",0,"Threshold of lowest expression for which the estimation is done.",-5);
    args.addOptionB("S","smoothOnly","smoothOnly",0,"Input file contains previously sampled hyperparameters which should smoothed only.");
    args.addOptionD("","lowess-f","lowess-f",0,"Parameter F for lowess smoothing specifying amount of smoothing.",0.2);
    args.addOptionL("","lowess-steps","lowess-steps",0,"Parameter Nsteps for lowess smoothing specifying number of iterations.",5);
-   args.addOptionB("","force","force",0,"Force smoothing.",false);
+   args.addOptionB("","noforce","noforce",0,"Do not force smoothing of the hyperparameters.",true);
    if(!args.parse(*argc,argv))return 0;
    // }}}
 
@@ -347,7 +347,7 @@ string programDescription =
    }
    outF<<"# alphaSmooth f: "<<f<<" nSteps: "<<iter+iterAdd<<endl;
    if(args.verbose)message("# alphaSmooth f: %lg nSteps: %ld\n",f,iter+iterAdd);
-   if((iterAdd==6)&&(! args.flag("force"))){
+   if((iterAdd==6)&&(args.flag("noforce"))){
       error("Main: Unable to produce smooth alpha >0.\nTry adjusting the parameter lowess-f.\n");
       outF.close();
       remove(args.getS("outFileName").c_str());
@@ -366,13 +366,13 @@ string programDescription =
    }
    outF<<"# betaSmooth f: "<<f<<" nSteps: "<<iter+iterAdd<<endl;
    if(args.verbose)message("# betaSmooth f: %lg nSteps: %ld\n",f,iter+iterAdd);
-   if((iterAdd==6)&&(! args.flag("force"))){
+   if((iterAdd==6)&&(args.flag("noforce"))){
       error("Main: Unable to produce smooth beta >0.\nTry adjusting the parameter lowess-f.\n");
       outF.close();
       remove(args.getS("outFileName").c_str());
       return 0;
    }
-   if(args.flag("force")){
+   if(!args.flag("noforce")){
       for(i=0;i<pAll;i++)
          while((i<pAll)&&((alpS[i]<=0)||(betS[i]<=0))){
             message("Removing: %lg %lg %lg\n",alpS[i],betS[i],exp[i]);

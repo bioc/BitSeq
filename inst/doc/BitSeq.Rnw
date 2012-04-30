@@ -257,6 +257,26 @@ estimateDE(cond1Files, cond2Files,
 @
 This produces three extra files, the first two \FILE{data-C0.est}, \FILE{data-C1.est} containing the condition means for each condition and the third file \FILE{data.estVar} containing samples of inferred variance for the first condition.
 
+\section{External use of \bitseq{}}
+
+All major computation in \bitseq{} is executed by running \COMM{C++} libraries, and there is also a \COMM{C++} only implementation of \bitseq{} package available at \url{http://code.google.com/p/bitseq/}.
+The standalone package can be particularly useful for clusters without support for R or Bioconductor. 
+It also provides speedup for \Rfunction{estimateExpression} and \Rfunction{parseAlignment} functions on systems with multiple CPUs by using Open MP.
+
+In order to facilitate the use of \COMM{C++} version of the package, the relevant functions in R interface provide \Rvar{pretend} option.
+Using this option, the computation will not be executed, instead the function will print out one or more command line commands which can be directly used with the \COMM{C++} implementation.
+
+<<>>=
+res1 <- getExpression("data-c0b0.sam",
+   "ensSelect1.fasta",
+   outPrefix="localDir/data-c0b0",
+   log = TRUE,
+   MCMC_burnIn=200,
+   MCMC_samplesN=200,
+   MCMC_scaleReduction=1.1,
+   pretend=TRUE)
+@
+
 
 \bibliographystyle{plainnat}
 %\bibliography{bitseq}

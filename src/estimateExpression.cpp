@@ -94,7 +94,7 @@ void readData(ArgumentParser &args) {//{{{
          }
          
          // for cases when M is initially unknown
-         if(tid>M){
+         if(tid>=M){
             M=tid+1;
             readInIsoform.resize(M,-1);
          }
@@ -401,8 +401,8 @@ string programDescription =
    // Set options {{{
    ArgumentParser args;
    args.init(programDescription,"[prob file]",1);
-   args.addOptionS("o","outFile","outFilePrefix",1,"Prefix for the output files.");
-   args.addOptionS("O","outputType","outputType",0,"Output type (theta, RPKM, counts, tau).","counts");
+   args.addOptionS("o","outPrefix","outFilePrefix",1,"Prefix for the output files.");
+   args.addOptionS("O","outType","outputType",0,"Output type (theta, RPKM, counts, tau).","counts");
    args.addOptionB("G","gibbs","gibbs",0,"Use gibbs sampling instead of collapsed gibbs sampling.");
    args.addOptionS("p","parFile","parFileName",0,"File containing parameters for the sampler, which can be otherwise specified by --MCMC* options. As the file is checked after every MCMC iteration, the parameters can be adjusted while running.");
    args.addOptionS("t","trInfoFile","trInfoFileName",0,"File containing transcript information. (Necessary for RPKM)");
