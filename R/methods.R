@@ -1,5 +1,10 @@
 ## compute PPLR for two conditions
-getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL ){
+getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, pretend=FALSE ){
+   ## pretend needs prefix
+   if(pretend && is.null(outPrefix)){
+      message("In case of no outPrefix provided this function uses R temporary directories which are only valid during the current session.")
+      stop("Please provide outPrefix when using the pretend option.")
+   }
    ## check file extensions
    ext <- .getExt(cond1[1]);
    for(it in c(cond1,cond2)){
@@ -12,7 +17,7 @@ getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL 
    if(is.null(trInfoFile)){
       trInfoFile=.changeExt(cond1[1]);
       if(file.exists(trInfoFile)){
-         message(paste("No trInfoFile provided, will try using",trInfoFile,"for result's row names."));
+         message(paste("## No trInfoFile provided, will try using",trInfoFile,"for result's row names."));
       }else{
          trInfoFile=NULL;
       }
@@ -20,11 +25,11 @@ getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL 
    meanFile <- paste(outPrefix, "Lmean", sep=".");
    parFile <- paste(outPrefix, "par", sep=".");
    message("Computing overall mean.");
-   getMeanVariance(c(cond1,cond2),meanFile,log=TRUE);
+   getMeanVariance(c(cond1,cond2),meanFile,log=TRUE,pretend=pretend);
    message("Estimating hyperparameters.");
-   estimateHyperPar(parFile,cond1,cond2,meanFile=meanFile);
+   estimateHyperPar(parFile,cond1,cond2,meanFile=meanFile,pretend=pretend);
    message("Estimating condition mean expression and PPLR.");
-   estimateDE(cond1,cond2,outPrefix,parFile,samples=samples);
+   estimateDE(cond1,cond2,outPrefix,parFile,samples=samples,pretend=pretend);
    if(samples){
       c1Res <- paste(outPrefix,"-C0.est",sep="");
       c2Res <- paste(outPrefix,"-C1.est",sep="");
@@ -33,13 +38,21 @@ getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL 
       c2Res<-NULL;
    }
    pplrFN <- paste(outPrefix, "pplr", sep=".");
-   data=loadSamples( pplrFN, trInfoFile);
-   colnames(data)<-c("pplr", "ConfidenceLow", "ConfidenceHigh", "log2FC", "meanC1", "meanC2");
+   if(pretend){
+      data <- NULL
+   }else{
+      data <- loadSamples( pplrFN, trInfoFile);
+      colnames(data)<-c("pplr", "ConfidenceLow", "ConfidenceHigh", "log2FC", "meanC1", "meanC2");
+   }
    return(list(pplr=data,fn=list(pplr=pplrFN,C1samples=c1Res,C2samples=c2Res)));
 }
 
 ## compute transcript expression
-getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM", log=FALSE, ... ){
+getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM", log=FALSE, pretend=FALSE, ... ){
+   if(pretend && is.null(outPrefix)){
+      message("In case of no outPrefix provided this function uses R temporary directories which are only valid during the current session.")
+      stop("Please provide outPrefix when using the pretend option.")
+   }
    if(is.null(alignFile) || (!file.exists(alignFile)))stop("Please provide valid sam/bam file as alignFile.");
    if(is.null(trSeqFile) || (!file.exists(trSeqFile)))stop("Please provide valid Fasta reference file as trSeqFile.");
    if(is.null(outPrefix)){
@@ -59,27 +72,31 @@ getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, ty
    if(! uniform){
       probUF <- paste(outPrefix,"-U",".prob",sep="");
       print(probUF);
-      message("Pre-Computing alignment probabilities with uniform read distribution.");
-      parseAlignment(alignFile, probUF, trSeqFile, inputFormat=iFormat, uniform=FALSE);
-      message("Pre-Computing expression with uniform read distribution.");
-      estimateExpression(probUF, paste(outPrefix,"-U",sep=""), outputType="theta", MCMC_burnIn=1000, MCMC_samplesN=1000, MCMC_samplesSave=10, MCMC_samplesNmax=5000, MCMC_chainsN=2, MCMC_scaleReduction=1.5);
+      message("## Pre-Computing alignment probabilities with uniform read distribution.");
+      parseAlignment(alignFile, probUF, trSeqFile, inputFormat=iFormat, uniform=FALSE,pretend=pretend);
+      message("## Pre-Computing expression with uniform read distribution.");
+      estimateExpression(probUF, paste(outPrefix,"-U",sep=""), outputType="theta", MCMC_burnIn=1000, MCMC_samplesN=1000, MCMC_samplesSave=10, MCMC_samplesNmax=5000, MCMC_chainsN=2, MCMC_scaleReduction=1.5,pretend=pretend);
       exprFile <- paste(outPrefix,"-U",".thetaMeans",sep=""); 
    }else{
       exprFile <- NULL;
    }
    
-   message("Computing alignment probabilities.");
-   parseAlignment(alignFile, probF, trSeqFile, trInfoFile=trF, inputFormat=iFormat, uniform=uniform, expressionFile=exprFile);
-   message("Estimating transcript expression levels.");
-   estimateExpression(probF, outPrefix, outputType=type, trInfoFile=trF, ... );
-   message("Computing means.");
+   message("## Computing alignment probabilities.");
+   parseAlignment(alignFile, probF, trSeqFile, trInfoFile=trF, inputFormat=iFormat, uniform=uniform, expressionFile=exprFile,pretend=pretend);
+   message("## Estimating transcript expression levels.");
+   estimateExpression(probF, outPrefix, outputType=type, trInfoFile=trF, pretend=pretend, ... );
+   message("## Computing means.");
    if(type=="RPKM")type<-"rpkm";
    outFile <- paste(outPrefix, type, sep=".");
    meanFile <- paste(outPrefix, "mean", sep=".");
-   getMeanVariance(c(outFile), meanFile, log=log );
-   means <- loadSamples( meanFile )
-   means[,1] <- sqrt(means[,1])
-   colnames(means)<-c("mean","stdev");
+   getMeanVariance(c(outFile), meanFile, log=log, pretend=pretend );
+   if(pretend){
+      means <- NULL
+   }else{
+      means <- loadSamples( meanFile )
+      means[,1] <- sqrt(means[,1])
+      colnames(means)<-c("mean","stdev");
+   }
    return(list(exp=means , fn=outFile));
 }
 

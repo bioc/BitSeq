@@ -3,7 +3,10 @@
 \title{Estimate expression of transcripts}
 \description{Estimates the expression of transcripts using Markov chain Monte Carlo Algorithm}
 \usage{
-estimateExpression(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, MCMC_samplesSave=NULL, MCMC_samplesNmax=NULL, MCMC_chainsN=NULL, MCMC_scaleReduction=NULL, MCMC_dirAlpha=NULL, verbose=NULL)
+estimateExpression(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, 
+      trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, 
+      MCMC_samplesSave=NULL, MCMC_samplesNmax=NULL, MCMC_chainsN=NULL, 
+      MCMC_scaleReduction=NULL, MCMC_dirAlpha=NULL, verbose=NULL, pretend=FALSE)
 }
 \arguments{
 \item{probFile}{File with alignment probabilities produced by \code{parseAlignment}}
@@ -23,6 +26,7 @@ estimateExpression(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL,
 Advanced options:
 \item{thetaActFile}{File for logging noise parameter thetaAct, which is only generated when regular Gibbs sampling is used.}
 \item{MCMC_dirAlpha}{Alpha parameter for the Dirichlet distribution.}
+\item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 }
 \details{
 This function runs Collapse Gibbs algorithm to sample the MCMC samples of transcript expression. 
@@ -44,9 +48,13 @@ Either one of sample files based on output type selected:
 
 \seealso{\code{\link{parseAlignment}}}
 \examples{\dontrun{
-estimateExpression( probFile="data.prob", outFile="data", outputType="RPKM", trInfoFile="data.tr", verbose=TRUE)
-estimateExpression( probFile="data-c0b0.prob", outFile="data-c0b0", outputType="RPKM", trInfoFile="data.tr", MCMC_burnIn=200, MCMC_samplesN=200, MCMC_samplesSave=100, MCMC_scaleReduction=1.1, MCMC_chainsN=2 , MCMC_dirAlpha=NULL )
-estimateExpression( probFile="data.prob", outFile="data-G", gibbs=TRUE, parFile="parameters1.txt", outputType="counts", trInfoFile="data.tr")
+estimateExpression( probFile="data.prob", outFile="data", outputType="RPKM", 
+      trInfoFile="data.tr", verbose=TRUE)
+estimateExpression( probFile="data-c0b0.prob", outFile="data-c0b0", outputType="RPKM", 
+      trInfoFile="data.tr", MCMC_burnIn=200, MCMC_samplesN=200, MCMC_samplesSave=100, 
+      MCMC_scaleReduction=1.1, MCMC_chainsN=2 , MCMC_dirAlpha=NULL )
+estimateExpression( probFile="data.prob", outFile="data-G", gibbs=TRUE, 
+      parFile="parameters1.txt", outputType="counts", trInfoFile="data.tr")
 }}
 
 \keyword{transcript expression}

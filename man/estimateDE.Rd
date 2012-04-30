@@ -5,7 +5,9 @@
 Estimate condition mean expression for both experimental conditions using the expression estimates obtained by \link{estimateExpression}
 }
 \usage{
-estimateDE( cond1, cond2, outFile, parFile, lambda0=NULL, samples=NULL, confidencePerc=NULL, verbose=NULL )
+estimateDE( cond1, cond2, outFile, parFile, 
+      lambda0=NULL, samples=NULL, confidencePerc=NULL, 
+      verbose=NULL, pretend=FALSE )
 }
 \arguments{
 \item{cond1}{List of files containing the expression samples for contition 1.}
@@ -17,6 +19,7 @@ estimateDE( cond1, cond2, outFile, parFile, lambda0=NULL, samples=NULL, confiden
 \item{verbose}{Verbose output.}
 Advanced options:
 \item{lambda0}{Model parameter lambda_0.}
+\item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 }
 \details{
 This function takes as an input expression samples from biological replicates of two conditions and hyperparameters over precision distribution inferred by \code{\link{estimateHyperPar}}.

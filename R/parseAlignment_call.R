@@ -14,7 +14,7 @@
 #   args.addOptionL("","noiseMismatches","numNoiseMismatches",0,"Number of mismatches to be considered as noise.",LOW_PROB_MISSES);
 
 
-parseAlignment <- function( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL, expressionFile=NULL, readsN=NULL, uniform=TRUE, lenMu=NULL, lenSigma=NULL, verbose=NULL, veryVerbose=NULL){
+parseAlignment <- function( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL, expressionFile=NULL, readsN=NULL, uniform=TRUE, lenMu=NULL, lenSigma=NULL, verbose=NULL, veryVerbose=NULL, pretend=FALSE){
 ##  procN=NULL,
    args <- c('parseAlignment', alignFile, '--outFile', outFile , '--trSeqFile', trSeqFile)
    if (!is.null(inputFormat)) {
@@ -48,7 +48,11 @@ parseAlignment <- function( alignFile, outFile, trSeqFile, inputFormat=NULL, trI
       args <- c(args, '--veryVerbose')
    }
 
-   argc <- length(args);
-   ##dyn.load(paste("src/parseAlignment", .Platform$dynlib.ext, sep=""));
-   result <- .C("_parseAlignment", as.integer(argc), as.character(args));
+   if(pretend){
+      print(paste(args,collapse=" "))
+   }else{
+      argc <- length(args);
+      ##dyn.load(paste("src/parseAlignment", .Platform$dynlib.ext, sep=""));
+      result <- .C("_parseAlignment", as.integer(argc), as.character(args));
+   }
 }

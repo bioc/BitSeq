@@ -69,7 +69,7 @@ string programDescription =
    // Intro: {{{
    buildTime(argv[0]);
    ArgumentParser args(programDescription,"[sampleFiles]",1);
-   args.addOptionS("o","outFile","outFilePrefix",1,"Prefix for the output files.");
+   args.addOptionS("o","outPrefix","outFilePrefix",1,"Prefix for the output files.");
    args.addOptionS("p","parameters","parFileName",1,"File containing estimated hyperparameters.");
    args.addOptionB("s","samples","samples",0,"Produce samples of condition mean expression apart from PPLR and confidence.");
    args.addOptionD("l","lambda0","lambda0",0,"Parameter lambda_0.",LAMBDA_0);

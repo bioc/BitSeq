@@ -5,7 +5,8 @@
 Estimate expression of transcripts. Starting from alignment and reference files function function handles the entire process of expression analysis resulting in transcript expression means and standard deviation together with file containing all the expression samples.
 }
 \usage{
-getExpression(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM", log=FALSE, ... )
+getExpression(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM", 
+      log=FALSE, pretend=FALSE, ... )
 }
 \arguments{
 \item{alignFile}{File containing read alignments.}
@@ -14,7 +15,8 @@ getExpression(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM", l
 \item{uniform}{Use uniform read distribution.}
 \item{type}{Output type, possible values: \code{theta}, \code{RPKM}, \code{counts}, \code{tau}.}
 \item{log}{Report mean and expression of logged expression samples.}
-\item{...}{Other arguments are passed to \code{\link{estimateExpression}}, for more details see \code{\link{estimateExpression}}}
+\item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
+\item{...}{Other arguments are passed to \code{estimateExpression}, please see \code{\link{estimateExpression}}} for more details
 }
 \details{
 This function uses \code{parseAlignment} function to compute alignment probabilities and the function \code{estimateExpression} to produce the expression samples.
@@ -30,7 +32,8 @@ In case of non-uniform read distribution, it first produces approximate estimate
 
 \seealso{\code{\link{getDE}}, \code{\link{estimateExpression}}, \code{\link{parseAlignment}}}
 \examples{\dontrun{
-res1 <- getExpression("data-c0b0.sam","ensSelect1.fasta", MCMC_chains=2, MCMC_samplesN=100)
+res1 <- getExpression("data-c0b0.sam","ensSelect1.fasta", MCMC_chains=2, 
+      MCMC_samplesN=100)
 }}
 
 \keyword{transcript expression}

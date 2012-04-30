@@ -3,7 +3,10 @@
 \title{Estimate hyperparameters for DE model using expression samples and joint mean expression}
 \description{Estimate hyperparameters for the Differential Expression model using expression samples and produced smoothed values of the hyperparameters depending on joint mean expression.}
 \usage{
-estimateHyperPar( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL, meanFile=NULL, force=TRUE, exThreshold=NULL, lambda0=NULL, paramsAllFile=NULL, smoothOnly=NULL, lowess_f=NULL, lowess_steps=NULL, verbose=NULL, veryVerbose=NULL )
+estimateHyperPar( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL, 
+      meanFile=NULL, force=TRUE, exThreshold=NULL, lambda0=NULL, 
+      paramsAllFile=NULL, smoothOnly=NULL, lowess_f=NULL, lowess_steps=NULL, verbose=NULL, 
+      veryVerbose=NULL, pretend=FALSE )
 }
 \arguments{
 \item{outFile}{Name of the output file.}
@@ -21,6 +24,7 @@ Advanced options:
 \item{lowess\_f}{Parameter F for lowess smoothing specifying amount of smoothing.}
 \item{lowess\_steps}{Parameter Nsteps for lowess smoothing specifying number of iterations.}
 \item{veryVerbose}{More verbose output.}
+\item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 %\item{groupsNumber}{Number of groups of transcript of similar size.}
 %\item{samplesNumber}{Number of samples generated for each group.}
 }
@@ -35,7 +39,11 @@ Advanced options:
 \examples{\dontrun{
 cond1Files = c("data-c0b0.rpkm","data-c0b1.rpkm")
 cond2Files = c("data-c1b0.rpkm","data-c1b1.rpkm")
-estimateHyperPar( cond1=cond1Files, cond2=cond2Files, outFile="data.par", meanFile="data.means", verbose=TRUE)
+estimateHyperPar( cond1=cond1Files, cond2=cond2Files, outFile="data.par", 
+      meanFile="data.means", verbose=TRUE)
+
+estimateHyperPar( cond1=cond1Files, cond2=cond2Files, outFile="data.par", 
+      meanFile="data.means", paramsFile="data.ALLpar", force=FALSE)
 estimateHyperPar( outFile="data.par", paramsInFile="data.ALLpar", smoothOnly=TRUE )
 }}
 

@@ -3,7 +3,7 @@
 \title{Calculate mean and variance of expression samples}
 \description{Calculate mean and variance of expression samples or log-expression samples}
 \usage{
-getMeanVariance(sampleFiles, outFile, log=NULL, type=NULL, verbose=NULL)
+getMeanVariance(sampleFiles, outFile, log=NULL, type=NULL, verbose=NULL, pretend=FALSE)
 }
 \arguments{
 \item{sampleFiles}{List of one or more files containing the expression samples.}
@@ -11,6 +11,7 @@ getMeanVariance(sampleFiles, outFile, log=NULL, type=NULL, verbose=NULL)
 \item{log}{Use logged values.}
 \item{type}{Type of variance, possible values: \code{sample},\code{sqDif} for sample variance or squared difference.}
 \item{verbose}{Verbose output.}
+\item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 }
 \details{
 The \code{getMeanVariance} function computes means and variances of MCMC expression samples.

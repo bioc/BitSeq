@@ -11,7 +11,7 @@
 #  args.addOptionL("","lowess-steps","lowess-steps",0,"Parameter Nsteps for lowess smoothing specifying number of iterations.",5);
 #  args.addOptionB("","force","force",0,"Force smoothing",true);
 
-estimateHyperPar <- function( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL, meanFile=NULL, force=TRUE, exThreshold=NULL, lambda0=NULL, paramsAllFile=NULL, smoothOnly=NULL, lowess_f=NULL, lowess_steps=NULL, verbose=NULL, veryVerbose=NULL ){
+estimateHyperPar <- function( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL, meanFile=NULL, force=TRUE, exThreshold=NULL, lambda0=NULL, paramsAllFile=NULL, smoothOnly=NULL, lowess_f=NULL, lowess_steps=NULL, verbose=NULL, veryVerbose=NULL, pretend=FALSE ){
    if (is.null(paramsInFile)){
       args <- c('estimateHyperPar',cond1,'C',cond2, '--outFile', outFile)
    }else{
@@ -39,8 +39,8 @@ estimateHyperPar <- function( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL
    if ((!is.null(smoothOnly)) && (smoothOnly)) {
       args <- c(args, '--smoothOnly')
    }
-   if ((!is.null(force)) && (force)) {
-      args <- c(args, '--force')
+   if (! force) {
+      args <- c(args, '--noforce')
    }
 
    
@@ -51,7 +51,11 @@ estimateHyperPar <- function( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL
       args <- c(args, '--veryVerbose')
    }
 
-   argc <- length(args);
-   ## dyn.load(paste("src/estimateHyperPar", .Platform$dynlib.ext, sep=""));
-   result <- .C("_estimateHyperPar", as.integer(argc), as.character(args));
+   if(pretend){
+      print(paste(args,collapse=" "))
+   }else{
+      argc <- length(args);
+      ## dyn.load(paste("src/estimateHyperPar", .Platform$dynlib.ext, sep=""));
+      result <- .C("_estimateHyperPar", as.integer(argc), as.character(args));
+   }
 }

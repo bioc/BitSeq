@@ -4,13 +4,14 @@
 \title{Calculate gene expression or relative within gene expression}
 \description{Calculate either gene expression or relative within gene expression using transcript expression samples and transcript information file.}
 \usage{
-getGeneExpression(sampleFile, outFile=NULL, trInfoFile=NULL)
-getWithinGeneExpression(sampleFile, outFile=NULL, trInfoFile=NULL)
+getGeneExpression(sampleFile, outFile=NULL, trInfoFile=NULL, pretend=FALSE)
+getWithinGeneExpression(sampleFile, outFile=NULL, trInfoFile=NULL, pretend=FALSE)
 }
 \arguments{
 \item{sampleFile}{File containing the transcript expression samples.}
 \item{outFile}{Name of the output file. If not used, function uses temporary file.}
 \item{trInfoFile}{Transcript information file. If not used, function tries file with same name and extension \code{tr}. The file has to contain valid gene transcript mapping, see detail below.}
+\item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 }
 \details{
 The \code{getGeneExpression} function takes samples of transcript expression and produces file with expression of genes by adding up transcript expression.
