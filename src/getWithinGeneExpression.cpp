@@ -4,21 +4,16 @@
  *
  */
 #include<cmath>
-#include<cstdio>
 
 using namespace std;
 
-#include "posteriorSamples.h"
-#include "transcriptInfo.h"
+#include "PosteriorSamples.h"
+#include "TranscriptInfo.h"
+#include "ArgumentParser.h"
 #include "common.h"
-#include "argumentParser.h"
-
-#define Sof(x) (long)x.size()
-#define FOR(x,y,n) for(x=y;x<n;x++)
-#define FR(x,n) FOR(x,0,n)
 
 extern "C" int getWithinGeneExpression(int *argc,char* argv[]){
-   buildTime(argv[0]);
+   buildTime(argv[0],__DATE__,__TIME__);
    string programDescription=
 "Computes relative expression of transcripts within genes.\n\
    [sampleFiles] should contain transposed MCMC.\n\
@@ -74,7 +69,7 @@ extern "C" int getWithinGeneExpression(int *argc,char* argv[]){
       }
       outFile<<"# from: "<<args.args()[0]<<"\n# samples of within gene expression\n";
       if(! trFile.genesOrdered()){
-         message("WARNING: transcripts in output file will be reordered and grouped by genes.\n");
+         warning("Main: Transcripts in output file will be reordered and grouped by genes.\n");
          outFile<<"# WARNING: transcripts in output file are be reordered and grouped by genes.\n";
       }
       if(doLog)outFile<<"# L \n";
@@ -96,27 +91,27 @@ extern "C" int getWithinGeneExpression(int *argc,char* argv[]){
    if(args.flag("adjust")&&(doSum)){
       vector<double> tr(M);
       if(args.verbose)message("Computing normalization constants, because of length adjustment.\n");
-      FR(j,M){
+      for(j=0;j<M;j++){
          if(args.verbose)progressLog(j,M);
          samples.getTranscript(j,tr);
-         FR(i,N)
+         for(i=0;i<N;i++)
             normals[i] += tr[i]/trFile.L(j);
       }
    }
    if(args.verbose)message("Computing within gene relative expression.\n");
-   FR(g,G){
+   for(g=0;g<G;g++){
       if(args.verbose)progressLog(g,G);
       gM = trFile.getGtrs(g)->size();
-      if(Sof(trs)<gM)trs.resize(gM);
+      if((long)trs.size()<gM)trs.resize(gM);
       //message("%ld\n",gM);
-      FR(j,gM){
+      for(j=0;j<gM;j++){
          m = (*trFile.getGtrs(g))[j];
          samples.getTranscript( m , trs[j]);
          mean[m] = mean2[m] = sqSum[m] = sqSum2[m] = 0;
       }
-      FR(i,N){
+      for(i=0;i<N;i++){
          sum = 0;
-         FR(j,gM){
+         for(j=0;j<gM;j++){
             if(args.flag("adjust")){
                m = (*trFile.getGtrs(g))[j];
                l = trFile.L(m);
@@ -132,7 +127,7 @@ extern "C" int getWithinGeneExpression(int *argc,char* argv[]){
                sqSum[m] += x*x;
             }
          }
-         FR(j,gM){
+         for(j=0;j<gM;j++){
             trs[j][i] /= sum;
             if(doLog)trs[j][i] = log(trs[j][i]);
             if(doSum){
@@ -143,8 +138,8 @@ extern "C" int getWithinGeneExpression(int *argc,char* argv[]){
          }
       }
       if(doOut){
-         FR(j,gM){
-            FR(i,N)
+         for(j=0;j<gM;j++){
+            for(i=0;i<N;i++)
                outFile<<trs[j][i]<<" ";
             outFile<<endl;
          }
@@ -152,7 +147,7 @@ extern "C" int getWithinGeneExpression(int *argc,char* argv[]){
    }
    if(doOut)outFile.close();
    if(doSum){
-      FR(j,M){
+      for(j=0;j<M;j++){
          mean[j] /= N;
          var = sqSum[j]/N - mean[j]*mean[j];
          mean2[j] /= N;

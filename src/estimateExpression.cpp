@@ -2,32 +2,29 @@
 #include<cmath>
 #include<algorithm>
 
-//#include "gibbsParameters.h"
-#include "collapsedSampler.h"
-#include "gibbsSampler.h"
-#include "sampler.h"
-#include "fileHeader.h"
-#include "myTimer.h"
-#include "argumentParser.h"
-#include "transcriptInfo.h"
+#include "CollapsedSampler.h"
+#include "GibbsSampler.h"
+#include "Sampler.h"
+#include "FileHeader.h"
+#include "MyTimer.h"
+#include "ArgumentParser.h"
+#include "TranscriptInfo.h"
 #include "transposeFiles.h"
+#include "TagAlignments.h"
 #include "common.h"
 
-//#define Sof(x) (long)x.size()
-
-//using namespace std;
 
 #define DEBUG(x)
 #define FF first
 #define SS second
 
-vector<TagAlignment> alignments;
-vector<long> alignI; // index of read's first hit in hits
+//#define LOG_NEED
+
 TranscriptInfo trInfo;
 
 long  M;//, mAll; // M : number of transcripts (include transcript 0 ~ Noise)
-long N, Nunmap, Nmap; // N: number of read, unmappable read, mappable reads
-//double ratioNSoverT;
+//long N, 
+long Nunmap; // N: number of read, unmappable read, mappable reads
 
 string outTypeS;
 outputType outTypeI;
@@ -35,39 +32,33 @@ vector<string> samplesFileNames;
 string failedMessage;
 
 void clearDataEE(){
-   alignments.clear();
-   alignI.clear();
    samplesFileNames.clear();
 }
 
-void readData(ArgumentParser &args) {//{{{
-   long i,j,k,num,tid;
+TagAlignments* readData(ArgumentParser &args) {//{{{
+   long i,j,num,tid;
    double prb;
-   long Ntotal=0;
+   long Ntotal=0,Nmap=0;
    string readId,strand,blank;
    ifstream inFile;
    MyTimer timer;
+   TagAlignments *alignments = new TagAlignments();
 
    // Read alignment probabilities {{{
    inFile.open(args.args()[0].c_str());
    FileHeader fh(&inFile);
    bool newformat=true;
    if((!fh.probHeader(Nmap,Ntotal,newformat)) || (Nmap ==0)){//{{{
-     error("Prob file header read failed.\n");
+      error("Prob file header read failed.\n");
+      return NULL;
    }//}}}
    message("Mappings: %ld\n",Nmap);
    message("Ntotal: %ld\n",Ntotal);
    if(Ntotal>Nmap)Nunmap=Ntotal-Nmap;
    else Nunmap=1; //no valid count file assume only one not aligned properly
-   N=Nmap+Nunmap;
-   alignI.push_back(0);
-   vector<long> readInIsoform;
-   if(M>0){
-      readInIsoform.resize(M,-1);
-   }
-   long mod=10;
-   long isoformsHit=0;
-   //long bad = 0;
+   alignments->init(Nmap,0,M);
+   long mod=10000;
+   long bad = 0;
    timer.start();
    for(i = 0; i < Nmap; i++) {
       inFile>>readId>>num;
@@ -86,48 +77,38 @@ void readData(ArgumentParser &args) {//{{{
             // this read goes to noise
             tid=0;
             prb=100;
-            //bad++;
+            bad++;
          }
          if((!newformat) && (tid!=0)){
             // these lengths are not shifted
             prb /= trInfo.L(tid-1);
          }
-         
-         // for cases when M is initially unknown
-         if(tid>=M){
-            M=tid+1;
-            readInIsoform.resize(M,-1);
-         }
-         if( readInIsoform[tid] == i){
-            // this means that this read already had hit in isoform TID
-            // we find this hit and add probability, don't care about the direction
-            for(k = Sof(alignments)-1; alignments[k].getTrId() != tid; k--);
-            //assert(k >= alignI[i]);
-            alignments[k].setProb(alignments[k].getProb() + prb);
-         }else{
-            if(readInIsoform[tid] == -1)isoformsHit++;
-            // note that this read has hit in isoform SID
-            readInIsoform[tid] = i;
-            alignments.push_back(TagAlignment( tid, prb));
-         }
+         alignments->pushAlignment(tid, prb);         
       }
       // ignore rest of line
       inFile.ignore(10000000,'\n');
-      alignI.push_back(Sof(alignments)); 
-      //assert(alignI[i + 1] - alignI[i] >= 2);
 
+      alignments->pushRead();
+
+#ifdef BIOC_BUILD
       R_CheckUserInterrupt();
+#endif
       if((i % mod == 0)&&(i>0)){
          message("  %ld ",i);
          timer.split();
          mod*=10;
       }
    }
+   //message("Bad: %ld\n",bad);
    inFile.close();
+   long Nhits,NreadsReal;
+   alignments->finalizeRead(M, NreadsReal, Nhits);
    //}}}
-   if(i<Nmap)message("Read only %ld mappings.\n",i);
-   message("Finished Reading!\nTotal hits = %ld\n",alignI[Nmap]);
-   message("Isoforms hit: %ld (out of %ld)\n",isoformsHit,M);
+   if(i<Nmap)message("Read only %ld reads.\n",NreadsReal);
+   message("Finished Reading!\nTotal hits = %ld\n",Nhits);
+   message("Isoforms: %ld\n",M);
+   Nmap = NreadsReal;
+   return alignments;
    /* {{{ remapping isoforms to ignore those without any hits
    M = mAll;
    M = isoformsHit;
@@ -144,12 +125,10 @@ void readData(ArgumentParser &args) {//{{{
    }}}*/
 }//}}}
 
-ofstream rLog;
-
-void MCMC(gibbsParameters &gPar,ArgumentParser &args){//{{{
+void MCMC(TagAlignments *alignments,gibbsParameters &gPar,ArgumentParser &args){//{{{
    // Declarations: {{{
    DEBUG(message("Declaratinos:\n"));
-   long i,j,samplesHave=0,totalSamples=0,samplesN,chainsN,samplesSave;
+   long i,j,samplesHave=0,totalSamples=0,samplesN,chainsN,samplesSave,seed;
    pairD rMean,tmpA,tmpV;
    double rH1,rH2;
    ofstream meansFile,samplesFile[gPar.chainsN()];
@@ -162,7 +141,7 @@ void MCMC(gibbsParameters &gPar,ArgumentParser &args){//{{{
    DEBUG(message("Initialization:\n"));
    samplesN=gPar.samplesN();
    chainsN=gPar.chainsN();
-   samplesSave=gPar.samplesSave();
+   samplesSave=(gPar.samplesSave()-1)/chainsN+1;
 
    vector<Sampler*> samplers(chainsN);
    if( ! args.flag("gibbs")){
@@ -173,27 +152,37 @@ void MCMC(gibbsParameters &gPar,ArgumentParser &args){//{{{
          samplers[j] = new GibbsSampler;
    }
 
-   // don't want to create a new one every time parallel code starts
-
    timer.start();;
    // parallel block: 
    // make sure that all functions used are CONST and variables are beaing READ or private
    // private: samplesHave
-   #pragma omp parallel for private(samplesHave)
+   if(args.isSet("seed"))seed=args.getL("seed");
+   else seed = time(NULL);
+   if(args.verbose)message("seed: %ld\n",seed);
    for(i=0;i<chainsN;i++){
       // Init samplers
-      DEBUG(message("Sampler %ld init and burn in.\n",i);)
+      DEBUG(message("Sampler %ld init.\n",i);)
       samplers[i]->noSave();
       DEBUG(message("init\n");)
-      samplers[i]->init(M, samplesN, samplesSave, Nmap, Nunmap,  alignI, alignments, gPar.beta(), gPar.dir(), i*time(NULL));
-
+      samplers[i]->init(M, samplesN, samplesSave, Nunmap, alignments, gPar.beta(), gPar.dir(), seed);
+      DEBUG(message("   seed: %ld\n",seed);)
+      // sampler is initialized with 'seed' and then sets 'seed' to new random seed for the next sampler
+   }
+   #pragma omp parallel for private(samplesHave)
+   for(i=0;i<chainsN;i++){
       DEBUG(message(" burn in\n");) 
       for(samplesHave=0;samplesHave<gPar.burnIn();samplesHave++){
         samplers[i]->sample();
-	R_CheckUserInterrupt();
+#ifdef BIOC_BUILD
+         R_CheckUserInterrupt();
+#endif
       }
-   } 
+   }
    message("Burn in: %ld DONE. ",gPar.burnIn());
+   DEBUG(message(" reseting samplers after burnin\n"));
+   for(i=0;i<chainsN;i++){
+      samplers[i]->resetSampler(samplesN);
+   }
    timer.split(0,'m');
    //}}}
    // Main sampling loop:
@@ -208,12 +197,13 @@ void MCMC(gibbsParameters &gPar,ArgumentParser &args){//{{{
          for(samplesHave = 0;samplesHave<samplesN;samplesHave++){
             samplers[i]->sample();
             samplers[i]->update();
-	    R_CheckUserInterrupt();
+#ifdef BIOC_BUILD
+            R_CheckUserInterrupt();
+#endif
          }
       }
       totalSamples+=samplesN*chainsN;
       message("\nSampling DONE. ");
-      //timeWas=timer.split(0,'m'); only for rLog
       timer.split(0,'m');
       //}}}
       // Check for change of parameters: {{{
@@ -261,30 +251,31 @@ void MCMC(gibbsParameters &gPar,ArgumentParser &args){//{{{
       message("rHat (for %ld samples) \n",samplesN);
       rMean.FF=0;
       rMean.SS=0;
-      message("   rHat (rHat from subset | tid | mean theta)\n");
+      message("   rHat (rHat from subset |    tid | mean theta)\n");
       for(i=0;(i<10) && (i<M);i++){
          rH1 = sqrt(rHat2[i].FF.FF);
          rH2 = sqrt(rHat2[i].FF.SS);
          rMean.FF+=rH1;
          rMean.SS+=rH2;
 //         message("   %lf (%lf | %ld | %lf|%lf|%lf)",rHat2[i].FF.FF,rHat2[i].FF.SS,rHat2[i].SS,totAverage[rHat2[i].SS].FF,withVar[rHat2[i].SS].FF,betwVar[rHat2[i].SS].FF/samplesHave);
-         message("   %lf (%lf | %ld | %lf)",rH1,rH2,rHat2[i].SS-1,totAverage[rHat2[i].SS].FF);
-         message("\n");
+         if((i<3) || args.verbose){
+            message("   %7.4lf (%7.4lf | %6ld | %7.4lf)",rH1,rH2,rHat2[i].SS-1,totAverage[rHat2[i].SS].FF);
+            message("\n");
+         }
 //                  message("   %lf",sqrt(rHat2[i].FF));
       }                  
       rMean.FF /= 10.0;
       rMean.SS /= 10.0;
-      message("  Mean rHat of worst 10 transcripts.(target: %lf)\n",gPar.targetScaleReduction());
-      message("   %lf\n",rMean.FF);
+      message("  Mean rHat of worst 10 transcripts: %lf\n",rMean.FF);
+      if(args.flag("scaleReduction"))message("   (target: %.3lf)\n",gPar.targetScaleReduction());
       message("  Mean C0: (");
       for(j=0;j<chainsN;j++)message("%ld ",samplers[j]->getAverageC0());
       message("). Nunmap: %ld\n",Nunmap);
       if(args.flag("gibbs"))message("  Mean thetaAct (noise parameter)\n   %lf\n",totAverage[0].FF);
       message("\n");
-//      rLog<<rMean.FF<<" "<<totalSamples<<" "<<timeWas<<" "<<rMean.SS<<endl;
       //}}}
       // Increase sample size and start over: {{{
-      if(quitNext){
+      if(quitNext){// Sampling iterations end {{{
          if(sqrt(rHat2[0].FF.FF) > gPar.targetScaleReduction()){
             message("WARNING: Following transcripts failed to converge entirely\n   (however the estimates might still be usable):\n");
             stringstream sstr;
@@ -302,22 +293,51 @@ void MCMC(gibbsParameters &gPar,ArgumentParser &args){//{{{
             samplesFile[j].close();
          }
          break;
-      }
-      if( (rMean.FF < gPar.targetScaleReduction())||
-          (samplesN*2>=gPar.samplesNmax())||
-          (totalSamples>5000000) ){
-         // Prepare for producing samples if Rhat^2<target scale reduction
-         // OR reached samplesNmax
-         // OR produced too many samples (>500 000)
-         if(! ((rMean.FF < gPar.targetScaleReduction())||
-               (totalSamples>5000000)) ){
-            samplesN = gPar.samplesNmax();
-         }
+      }//}}}
+      if(! args.flag("scaleReduction")){
+         vector<double> needS(M,0);
+         for(i=1;i<M;i++){
+            // between variance was not multiplied by samplesHave===n
+            // there is no chainsN in the denominator because samplesSave was already divided by chainsN
+            needS[i] = samplesSave * samplesHave/
+                     ((samplesHave-1.0)/samplesHave*withVar[i].FF/betwVar[i].FF+1.0);
+         } 
+         // log the number of effective samples, only when testing... //{{{
+         #ifdef LOG_NEED
+            stringstream sstr;
+            sstr<<args.getS("outFilePrefix")<<".effLog";
+            ofstream effLog(sstr.str().c_str());
+            for(i=1;i<M;i++){
+               effLog<<needS[rHat2[i].SS]<<" "<<sqrt(rHat2[i].FF.FF)<<" "<<samplesHave*betwVar[rHat2[i].SS].FF<<" "<<withVar[rHat2[i].SS].FF<<" "<<rHat2[i].SS<<endl;
+            }
+            effLog.close();
+         #endif
+         //}}}
+         sort(needS.begin(),needS.end());
+         i = (long)(M*0.95)+1; // make at least 95% transcripts converged 
+         samplesN = max((long)needS[i],samplesSave);
          quitNext = true;
+      }else{
+            // Prepare for producing samples if Rhat^2<target scale reduction
+            // OR reached samplesNmax
+            // OR produced too many samples (>500 000)
+         if((totalSamples < 5000000) && (rMean.FF > gPar.targetScaleReduction())){
+            samplesN *= 2;
+         }else{
+            quitNext = true;
+         }
+         if((samplesN >= gPar.samplesNmax()) || args.flag("MCMC_samplesDOmax")){
+            samplesN=gPar.samplesNmax();
+            quitNext = true;
+         }
+      }
+      // if next iteration is the last one, prepare the files and make samples write samples
+      if(quitNext){ 
          message("Producing %ld final samples.\n",samplesN);
+         // if samplesN<samplesSave, only samplesN samples will be saved
+         if(samplesN<samplesSave)samplesSave = samplesN;
          stringstream sstr;
          for(j=0;j<chainsN;j++){
-            R_CheckUserInterrupt();
             sstr.str("");
             sstr<<args.getS("outFilePrefix")<<"."<<outTypeS<<"S-"<<j;
             samplesFileNames.push_back(sstr.str());
@@ -325,14 +345,9 @@ void MCMC(gibbsParameters &gPar,ArgumentParser &args){//{{{
             if(! samplesFile[j].is_open()){
                error("Main: Unable to open output file '%s'.\n",(sstr.str()).c_str());
             }else{
-               samplesFile[j]<<"#\n# M "<<M-1<<"\n# N "<<min(samplesSave,samplesN)<<endl;
+               samplesFile[j]<<"#\n# M "<<M-1<<"\n# N "<<samplesSave<<endl;
                samplers[j]->saveSamples(&samplesFile[j],trInfo.getShiftedLengths(true),outTypeI);
             }
-         }
-      }else{
-         samplesN *= 2;
-         if(samplesN>gPar.samplesNmax()){
-            samplesN = gPar.samplesNmax();
          }
       }
       for(j=0;j<chainsN;j++){
@@ -343,43 +358,51 @@ void MCMC(gibbsParameters &gPar,ArgumentParser &args){//{{{
    }
    // Write means: {{{
    meansFile.open((args.getS("outFilePrefix")+".thetaMeans").c_str());
-   meansFile<<"# T => Mrows Ncols\n# M "<<M-1<<"\n# N "<<chainsN+1<<endl;
-   meansFile<<"# thetaAct variance:"; //prefix 0 isoform with #
-   meansFile<<scientific;
-   meansFile.precision(9);
-   double sum,sum2;
-   for(i=0;i<M;i++){
-      sum=0;
-      sum2=0;
-      for(j=0;j<chainsN;j++){
-         sum+=samplers[j]->getAverage(i).FF; 
-         sum2+=samplers[j]->getAverage(i).SS; 
-         if(i==0)meansFile<<" "<<samplers[j]->getWithinVariance(0).FF;
+   if(meansFile.is_open()){
+      meansFile<<"# T => Mrows Ncols\n# M "<<M-1<<"\n# N "<<chainsN+1<<endl;
+      meansFile<<"# file containing the mean value of theta - realtive abundace of fragments\n"
+                 "# (overall mean and mean from every chain are reported)\n"
+                 "# columns:\n"
+                 "# <transcriptID> <overalMean> <chain1mean> <chain2mean> ....\n";
+      meansFile<<scientific;
+      meansFile.precision(9);
+      double sum,sum2;
+      for(i=0;i<M;i++){
+         sum=0;
+         sum2=0;
+         for(j=0;j<chainsN;j++){
+            sum+=samplers[j]->getAverage(i).FF; 
+            sum2+=samplers[j]->getAverage(i).SS; 
+            if(i==0)meansFile<<" "<<samplers[j]->getWithinVariance(0).FF;
+         }
+         if(i==0){
+            meansFile<<"# thetaAct "<<sum/chainsN<<" ";
+         }else{
+            meansFile<< i<<" "<< sum/chainsN <<" ";
+         }
+         for(j=0;j<chainsN;j++)
+            meansFile<<samplers[j]->getAverage(i).FF<<" ";
+         meansFile<<sum2/chainsN<<endl;
       }
-      if(i==0){
-         meansFile<<"\n# thetaAct "<<sum/chainsN<<" ";
-      }else{
-         meansFile<< i<<" "<< sum/chainsN <<" ";
-      }
-      for(j=0;j<chainsN;j++)
-         meansFile<<samplers[j]->getAverage(i).FF<<" ";
-      meansFile<<sum2/chainsN<<endl;
+      meansFile.close();
+   }else{
+      warning("Main: Unable to write thetaMeans into: %s\n",(args.getS("outFilePrefix")+".thetaMeans").c_str());
    }
-   meansFile.close();
    //}}}
    // Write thetaAct: {{{
    if(args.isSet("thetaActFileName")){
       ofstream actFile(args.getS("thetaActFileName").c_str());
       if(actFile.is_open()){
-         actFile<<"# N "<<chainsN*min(samplesSave,samplesN)<<endl;
+         actFile<<"# samples of thetaAct parameter (only generated when using gibbs sampling)\n";
+         actFile<<"# N "<<chainsN*samplesSave<<endl;
          for(j=0;j<chainsN;j++){
-            for(i=0;i<Sof(samplers[j]->getThetaActLog());i++)
+            for(i=0;i<(long)samplers[j]->getThetaActLog().size();i++)
                actFile<<samplers[j]->getThetaActLog()[i]<<" ";
          }
          actFile<<endl;
          actFile.close();
       }else{
-         message("WARNING: Main: Unable to write thetaAct log: %s.\n",(args.getS("thetaActFileName")).c_str());
+         warning("Main: Unable to write thetaAct log: %s.\n",(args.getS("thetaActFileName")).c_str());
       }
    }
    // }}}
@@ -397,32 +420,39 @@ clearDataEE();
 string programDescription =
 "Estimates expression given precomputed probabilities of (observed) reads' alignments.\n\
    Uses MCMC sampling algorithm to produce relative abundance or RPKM.\n";
-   buildTime(argv[0]);
+   buildTime(argv[0],__DATE__,__TIME__);
    // Set options {{{
    ArgumentParser args;
    args.init(programDescription,"[prob file]",1);
    args.addOptionS("o","outPrefix","outFilePrefix",1,"Prefix for the output files.");
-   args.addOptionS("O","outType","outputType",0,"Output type (theta, RPKM, counts, tau).","counts");
+   args.addOptionS("O","outType","outputType",0,"Output type (theta, RPKM, counts, tau).","theta");
    args.addOptionB("G","gibbs","gibbs",0,"Use gibbs sampling instead of collapsed gibbs sampling.");
    args.addOptionS("p","parFile","parFileName",0,"File containing parameters for the sampler, which can be otherwise specified by --MCMC* options. As the file is checked after every MCMC iteration, the parameters can be adjusted while running.");
    args.addOptionS("t","trInfoFile","trInfoFileName",0,"File containing transcript information. (Necessary for RPKM)");
-   args.addOptionL("P","procN","procN",0,"Maximum number of threads to be used.",4);
-   args.addOptionS("","thetaActFile","thetaActFileName",0,"File for logging noise parameter \theta^{act}.");
+   args.addOptionL("P","procN","procN",0,"Limit the maximum number of threads to be used. (Default is the number of MCMC chains.)");
+   args.addOptionS("","thetaActFile","thetaActFileName",0,"File for logging noise parameter theta^{act}.");
    args.addOptionL("","MCMC_burnIn","MCMC_burnIn",0,"Length of sampler's burn in period.",1000);
    args.addOptionL("","MCMC_samplesN","MCMC_samplesN",0,"Initial number of samples produced. Doubles after every iteration.",1000);
-   args.addOptionL("","MCMC_samplesSave","MCMC_samplesSave",0,"Number of samples recorder for each chain at the end.",500);
+   args.addOptionL("","MCMC_samplesSave","MCMC_samplesSave",0,"Number of samples recorder in total.",1000);
    args.addOptionL("","MCMC_samplesNmax","MCMC_samplesNmax",0,"Maximum number of samples produced in one iteration. After producing samplesNmax samples sampler finishes.",50000);
+   args.addOptionB("","MCMC_samplesDOmax","MCMC_samplesDOmax",0,"Produce maximum number of samples (samplesNmax) in second iteration and quit.");
    args.addOptionL("","MCMC_chainsN","MCMC_chainsN",0,"Number of parallel chains used. At least two chains will be used.",4);
    args.addOptionD("","MCMC_scaleReduction","MCMC_scaleReduction",0,"Target scale reduction, sampler finishes after this value is met.",1.2);
    args.addOptionD("","MCMC_dirAlpha","MCMC_dirAlpha",0,"Alpha parameter for the Dirichlet distribution.",1.0);
+   args.addOptionB("","scaleReduction","scaleReduction",0,"Use scale reduction as stopping criterion, instead of computing effective sample size.");
+   args.addOptionL("s","seed","seed",0,"Random initialization seed.");
    if(!args.parse(*argc,argv))return 0;
    // }}}
    MyTimer timer;
 #ifdef SUPPORT_OPENMP
-   omp_set_num_threads(args.getL("procN"));
+   if(args.isSet("procN"))
+      omp_set_num_threads(args.getL("procN"));
+   else
+      omp_set_num_threads(args.getL("MCMC_chainsN"));
 #endif
 
    gibbsParameters gPar;
+   TagAlignments *alignments=NULL;
 //{{{ Initialization:
 
    gPar.setParameters(args);
@@ -456,30 +486,35 @@ string programDescription =
          error("Main: Missing transcript info file. This will cause problems if producing RPKM.");
          return 1;
       }
-      M=0;
    }else{
       M = trInfo.getM()+1;
    }
-   readData(args);
+   alignments = readData(args);
+   if(! alignments){
+      error("Main: Reading alignments failed.\n");
+      return 1;
+   }
    if(M<=0){
       error("Main: Invalid number of transcripts in .prob file.\n");
+      return 1;
    }
    // }}}
 
    if(args.verbose)timer.split();
    if(args.verbose)message("Starting the sampler.\n");
-   MCMC(gPar,args);
+   MCMC(alignments,gPar,args);
    // {{{ Transpose and merge sample file 
    if(transposeFiles(samplesFileNames,args.getS("outFilePrefix")+"."+outTypeS,args.verbose,failedMessage)){
       if(args.verbose)message("Sample files transposed. Deleting.\n");
-      for(long i=0;i<Sof(samplesFileNames);i++){
+      for(long i=0;i<(long)samplesFileNames.size();i++){
          remove(samplesFileNames[i].c_str());
       }
    }else{
       message("Transposing files failed. Please check the files and try using trasposeLargeFile to transpose & merge the files into single file.\n");
    }
    //}}}
-   if(args.verbose){message("DONE. "); timer.split(0,'h');}
+   delete alignments;
+   if(args.verbose){message("DONE. "); timer.split(0,'m');}
    return 0;
 }//}}}
 

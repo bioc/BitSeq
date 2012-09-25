@@ -7,12 +7,7 @@ PKG_CPPFLAGS+= -DBIOC_BUILD  -I.
 #PKG_CFLAGS= $(DFLAGS)
 
 
-OBJECTS= getGeneExpression.o getWithinGeneExpression.o readDistribution.o parseAlignment.o common.o argumentParser.o transcriptInfo.o transcriptSequence.o transcriptExpression.o estimateExpression.o sampler.o gibbsSampler.o collapsedSampler.o gibbsParameters.o transposeFiles.o getVariance.o posteriorSamples.o estimateHyperPar.o lowess.o estimateDE.o R_init_BitSeq.o
+OBJECTS= getGeneExpression.o getWithinGeneExpression.o ReadDistribution.o ParseAlignment.o common.o ArgumentParser.o TagAlignments.o TranscriptInfo.o TranscriptSequence.o TranscriptExpression.o estimateExpression.o Sampler.o GibbsSampler.o CollapsedSampler.o GibbsParameters.o transposeFiles.o getVariance.o PosteriorSamples.o estimateHyperPar.o lowess.o estimateDE.o R_init_BitSeq.o
 
 all: $(SHLIB)
-
-#all: estimateExpression.so parseAlignment.so getVariance.so estimateHyperPar.so estimateDE.so
-
-#clean:
-#	rm samtools/*.o *.o *.so
 

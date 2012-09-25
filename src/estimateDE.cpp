@@ -2,7 +2,7 @@
  * Original model applying the DE model to individual sets (from all replicates) of samples independently  
  *
  */
-#include <cmath>
+#include<cmath>
 #include<algorithm>
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/gamma_distribution.hpp"
@@ -10,25 +10,18 @@
 
 using namespace std;
 
-#include <R_ext/Utils.h>
-
-#include "posteriorSamples.h"
-#include "fileHeader.h"
-#include "myTimer.h"
-#include "common.h"
-#include "argumentParser.h"
+#include "PosteriorSamples.h"
+#include "FileHeader.h"
+#include "MyTimer.h"
+#include "ArgumentParser.h"
 #include "common.h"
 
-#define Sof(x) (long)x.size()
-#define FOR(x,y,n) for(x=y;x<n;x++)
-#define FR(x,n) FOR(x,0,n)
 #define FF first
 #define SS second
-#define PL pair<long,long>
 
 //#define PERCENT 0.9
 
-#define LAMBDA_0 0.5
+#define LAMBDA_0 2.0
 //#define MU_0 (10/M)
 // CHECK: ------------------------------
 //#define ALPHA 1.2
@@ -37,7 +30,7 @@ using namespace std;
 const double LOG_ZERO=-1000;
 
 void getParams(double &alpha, double &beta, double expr, vector<pair<double,pair<double,double> > > &params){//{{{
-   long i=0,j=Sof(params)-1,k;
+   long i=0,j=params.size()-1,k;
    if(expr<=params[0].FF){
       alpha=params[0].SS.FF;
       beta=params[0].SS.SS;
@@ -63,11 +56,11 @@ void getParams(double &alpha, double &beta, double expr, vector<pair<double,pair
 extern "C" int estimateDE(int *argc,char* argv[]){
 string programDescription =
 "Estimate differential expression from the dataset.\n\
-   [sample Files] should contain transposed MCMC samples from replicates.\n\
+   [sampleFiles] should contain transposed MCMC samples from replicates.\n\
    To distinguish conditions use C between them e.g.:\n\
       samplesC1-R1.rpkm samplesC1-R2.rpkm C samplesC2-R1.rpkm samplesC2-R2.rpkm";
    // Intro: {{{
-   buildTime(argv[0]);
+   buildTime(argv[0],__DATE__,__TIME__);
    ArgumentParser args(programDescription,"[sampleFiles]",1);
    args.addOptionS("o","outPrefix","outFilePrefix",1,"Prefix for the output files.");
    args.addOptionS("p","parameters","parFileName",1,"File containing estimated hyperparameters.");
@@ -85,7 +78,7 @@ string programDescription =
       return 1;
    }
    vector<pair<double, pair<double,double> > > params(parN);
-   FR(i,parN){
+   for(i=0;i<parN;i++){
       paramF>>params[i].SS.FF>>params[i].SS.SS>>params[i].FF;
    }
    fh.close();
@@ -103,7 +96,7 @@ string programDescription =
       message("Samples are not logged. (will log for you)\n");
       message("Using %lg as minimum instead of log(0).\n",LOG_ZERO);
    }
-   //CR = cond.getRN();
+   // CR = cond.getRN();
    if(args.verbose)message("Sample files loaded.\n");
    // }}}
    // output files:{{{
@@ -111,7 +104,7 @@ string programDescription =
    ofstream outFiles[C+1];
    if(args.flag("samples")){
       stringstream fName;
-      FR(c,C){
+      for(c=0;c<C;c++){
          fName.str("");
          fName<<args.getS("outFilePrefix")<<"-C"<<c<<".est";
          outFiles[c].open(fName.str().c_str());
@@ -122,7 +115,7 @@ string programDescription =
          outFiles[c]<<"# Inferred means\n";
          outFiles[c]<<"# condition "<<c<<endl;
          outFiles[c]<<"# ";
-         FR(i,Sof(args.args())){
+         for(i=0;i<(long)args.args().size();i++){
             outFiles[c]<<args.args()[i]<<" ";
          }
          outFiles[c]<<"\n# lambda_0 "<<args.getD("lambda0")<<"\n# T \n# M "<<M<<"\n# N "<<N<<endl;
@@ -141,7 +134,7 @@ string programDescription =
       return 1;
    }
    outF<<"# ";
-   FR(i,Sof(args.args())){
+   for(i=0;i<(long)args.args().size();i++){
       outF<<args.args()[i]<<" ";
    }
    outF<<"\n# lambda_0 "<<args.getD("lambda0")<<"\n# T \n# M "<<M<<"\n# N "<<N<<"\n# Columns:\n";
@@ -180,20 +173,20 @@ string programDescription =
       timer.split();
       message("Sampling condition mean expression.\n");
    }//}}}
-   FR(m,M){
+   for(m=0;m<M;m++){
       if(progressLog(m,M))timer.split();
       // Read and prepare {{{
       mu_00 = divT = 0;
-      FR(c,C){
+      for(c=0;c<C;c++){
          mu_0[c]=0;
          divC=0;
          RC = cond.getRC(c);
-         if(Sof(tr[c]) < RC){
+         if((long)tr[c].size() < RC){
             tr[c].resize( RC );
          }
-         FR(r, RC){
+         for(r=0;r< RC;r++){
             if(cond.getTranscript(c, r , m, tr[c][r]), N){
-               FR(n,N){
+               for(n=0;n<N;n++){
                   if(!logged)tr[c][r][n] = (tr[c][r][n] == 0)? LOG_ZERO : log (tr[c][r][n] ); // NO LOGGING
                   mu_0[c]+=tr[c][r][n];
                }
@@ -202,7 +195,9 @@ string programDescription =
                warning("Main: Condition %ld replicate %ld does not seem to have transcript %ld.\n",c,r,m);
             }
          }
+#ifdef BIOC_BUILD
 	 R_CheckUserInterrupt();
+#endif
          mu_0[c] /= (divC * N); // take mean over all replicates
          mu_00+=mu_0[c];
          if(mu_0[c]!=0)divT++;
@@ -210,8 +205,8 @@ string programDescription =
       mu_00/=divT; 
       //}}}
       // Sample condition mean expressions {{{
-      FR(n,N){
-         FR(c,C){
+      for(n=0;n<N;n++){
+         for(c=0;c<C;c++){
             RC = cond.getRC(c);
             getParams(al0,be0,mu_0[c],params);
             alpha = al0 + RC / 2.0;
@@ -219,7 +214,7 @@ string programDescription =
 
             sum=0;
             sumSq=0;
-            FR(r, RC){
+            for(r=0;r< RC;r++){
                sum += tr[c][r][n];
                sumSq += tr[c][r][n]*tr[c][r][n];
             }
@@ -236,17 +231,19 @@ string programDescription =
             samples[c][n] = mu;
             vars[n] = 1/(prec *(lambda0 + RC));
          }
+#ifdef BIOC_BUILD
 	 R_CheckUserInterrupt();
+#endif
       }
       // }}}
-      FR(c,C){
+      for(c=0;c<C;c++){
          mu_0[c] = 0;
-         FR(n,N)mu_0[c] +=samples[c][n];
+         for(n=0;n<N;n++)mu_0[c] +=samples[c][n];
          mu_0[c] /= N;
       }
       pplr = 0;
       logFC = 0;
-      FR(n,N){
+      for(n=0;n<N;n++){
          if(samples[0][n] < samples[1][n])pplr+=1;
          logFC += samples[1][n]-samples[0][n];
          difs[n] = samples[1][n]-samples[0][n];
@@ -259,14 +256,14 @@ string programDescription =
       cfLow = difs[(long)(N/100.*args.getD("cf"))];
       cfHigh = difs[(long)(N-N/100.*args.getD("cf"))];
       outF<<pplr<<" "<<cfLow<<" "<<cfHigh<<" "<<logFC;
-      FR(c,C)outF<<" "<<mu_0[c];
+      for(c=0;c<C;c++)outF<<" "<<mu_0[c];
       outF<<endl;
       if(args.flag("samples")){//{{{
-         FR(c,C){
-            FR(n,N)outFiles[c]<<samples[c][n]<<" ";
+         for(c=0;c<C;c++){
+            for(n=0;n<N;n++)outFiles[c]<<samples[c][n]<<" ";
             outFiles[c]<<endl;
          }
-         FR(n,N){
+         for(n=0;n<N;n++){
             outFiles[C]<<vars[n]<<" ";
          }
          outFiles[C]<<endl;
@@ -274,7 +271,7 @@ string programDescription =
    }
    // Close and exit {{{
    if(args.flag("samples")){
-      FR(c,C+1)outFiles[c].close();
+      for(c=0;c<C+1;c++)outFiles[c].close();
    }
    outF.close();
    if(args.verbose)message("DONE\n");

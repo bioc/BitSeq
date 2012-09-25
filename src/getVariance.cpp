@@ -4,20 +4,18 @@
  *
  *
  */
-#include <cmath>
+#include<cmath>
 
 using namespace std;
 
-#include "posteriorSamples.h"
-#include "argumentParser.h"
+#include "PosteriorSamples.h"
+#include "ArgumentParser.h"
 #include "common.h"
 
 #define LOG_ZERO -1000
-#define FOR(x,y,n) for(x=y;x<n;x++)
-#define FR(x,n) FOR(x,0,n)
 
 extern "C" int getVariance(int *argc,char* argv[]){
-   buildTime(argv[0]);
+   buildTime(argv[0],__DATE__,__TIME__);
    string programDescription=
 "Estimates variance of MCMC samples from 1 or multiple replicates.\n\
    [sample Files] should contain transposed MCMC samples from replicates.";   
@@ -60,13 +58,13 @@ extern "C" int getVariance(int *argc,char* argv[]){
    double m,mSq,count,sqDif;
    bool good=true;
    if(args.getS("type")=="sample"){ //{{{
-      FR(j,M){
+      for(j=0;j<M;j++){
          if((j%10000==0)&&(j>0)&&args.verbose)message("%ld\n",j);
          
          m = mSq = count = 0;
-         FR(r,RN){
+         for(r=0;r<RN;r++){
             if(cond.getTranscript(r,j,tr,N/RN)){
-               FR(i,N/RN){
+               for(i=0;i<N/RN;i++){
                   if(doLog){
                      tr[i]=tr[i]<=0?LOG_ZERO:log(tr[i]);
                   }
@@ -75,13 +73,13 @@ extern "C" int getVariance(int *argc,char* argv[]){
                }
                count+=N/RN;
             }else{
-               message("ERROR: %ld %ld\n",j,r);
+               warning("Error at %ld %ld\n",j,r);
             }
    //         message("%ld  %ld\n",m,count);
          }
          if(count==0){
             warning("no samples for transcript: %ld.\n",j);
-            //FR(i,Sof(tr))message("%lf ",tr[i]);
+            //for(i,Sof(tr))message("%lf "=0;i,Sof(tr))message("%lf "<tr[i];i,Sof(tr))message("%lf "++);
             mean[j] = -47;
             var[j] = -47;
          }else{
@@ -90,7 +88,7 @@ extern "C" int getVariance(int *argc,char* argv[]){
          }
       }//}}}
    }else{ // "sqDif" {{{
-      FR(j,M){
+      for(j=0;j<M;j++){
          if((j%10000==0)&&(j>0)&&args.verbose)message("%ld\n",j);
          m = sqDif = 0;
          if(RN==1){
@@ -101,7 +99,7 @@ extern "C" int getVariance(int *argc,char* argv[]){
                continue;
             }
             tr2.resize(N/2);
-            FR(i,N/2)
+            for(i=0;i<N/2;i++)
                tr2[i]=tr[i+N/2];
          }else{
             if(! (cond.getTranscript(0,j,tr,N/2)&&
@@ -113,7 +111,7 @@ extern "C" int getVariance(int *argc,char* argv[]){
             }
          }
          if(good){
-            FR(i,N/2){
+            for(i=0;i<N/2;i++){
                if(doLog){
                   tr[i]=log(tr[i]);
                   tr2[i]=log(tr2[i]);
@@ -130,12 +128,12 @@ extern "C" int getVariance(int *argc,char* argv[]){
    
    outFile<<"# Transcripts mean expression and "<<args.getS("type")<<" variance."<<endl;
    outFile<<"# files: ";
-   FR(r,RN)outFile<<args.args()[r]<<" ";
+   for(r=0;r<RN;r++)outFile<<args.args()[r]<<" ";
    outFile<<endl;
    if(doLog)outFile<<"# L -> values logged"<<endl;
    outFile<<"# M "<<M<<endl;
    (outFile<<scientific).precision(9);
-   FR(i,M){
+   for(i=0;i<M;i++){
       if((mean[i]==-47)&&(var[i]==-47))outFile<<"NaN 0 "<<endl;
       else outFile<<mean[i]<<" "<<var[i]<<endl;
    }

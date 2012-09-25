@@ -1,16 +1,14 @@
-#include <cstdlib>
-#include <iomanip>
-#include <fstream>
-#include <vector>
+#include<cstdlib>
+#include<iomanip>
+#include<fstream>
+#include<vector>
 
 using namespace std;
 
-#include "fileHeader.h"
+#include "FileHeader.h"
 #include "transposeFiles.h"
 #include "common.h"
 
-#define FOR(x,y,n) for(x=y;x<n;x++)
-#define FR(x,n) FOR(x,0,n)
 #define Sof(x) (long)x.size()
 
 bool transposeFiles(vector<string> inFileNames, string outFileName, bool verbose, string message){
@@ -68,19 +66,21 @@ bool transposeFiles(vector<string> inFileNames, string outFileName, bool verbose
       bufN=bufMax;
       if(verbose){
          message("Read %ld->%ld",done,bufN+done);
+#ifndef BIOC_BUILD
          fflush(stdout);
+#endif
       }
-      FR(f,fileN){
-         FR(i,N[f]){
-            FR(j,bufN) inFile[f]>>valueBuf[j][lastBuf];
+      for(f=0;f<fileN;f++){
+         for(i=0;i<N[f];i++){
+            for(j=0;j<bufN;j++) inFile[f]>>valueBuf[j][lastBuf];
             lastBuf++;
             seeks[f][i]=inFile[f].tellg();
             inFile[f].ignore(10000000,'\n');
          }
       }
       if(verbose)message(" write\n");
-      FR(j,bufN){
-         FR(i,lastBuf)
+      for(j=0;j<bufN;j++){
+         for(i=0;i<lastBuf;i++)
             outFile<<valueBuf[j][i]<<" ";
          outFile<<endl;
       }
@@ -91,32 +91,34 @@ bool transposeFiles(vector<string> inFileNames, string outFileName, bool verbose
          if(m-done<bufMax)bufN=m-done;
          if(verbose){
             message("Read %ld->%ld",done,bufN+done);
+#ifndef BIOC_BUILD
             fflush(stdout);
+#endif
          }
-         FR(f,fileN){
-            FR(i,N[f]){
+         for(f=0;f<fileN;f++){
+            for(i=0;i<N[f];i++){
                inFile[f].seekg(seeks[f][i]);
-               FR(j,bufN) inFile[f]>>valueBuf[j][lastBuf];
+               for(j=0;j<bufN;j++) inFile[f]>>valueBuf[j][lastBuf];
                lastBuf++;
                seeks[f][i]=inFile[f].tellg();
             }
          }
          if(verbose)message(" write\n");
-         FR(j,bufN){
-            FR(i,lastBuf)
+         for(j=0;j<bufN;j++){
+            for(i=0;i<lastBuf;i++)
                outFile<<valueBuf[j][i]<<" ";
             outFile<<endl;
          }
          lastBuf=0;
          done+=bufN;
       }
-      FR(f,fileN)inFile[f].close();
+      for(f=0;f<fileN;f++)inFile[f].close();
    } // }}}
    else{ // if(trans) {{{
       vector<long> seeks(m,-1);
       vector<vector<string> > valueBuf(m,vector<string>(bufMax));
       long done;
-      FR(f,fileN){
+      for(f=0;f<fileN;f++){
          seeks.assign(M,-1);
          done = 0;
          while(done<N[f]){
@@ -124,19 +126,21 @@ bool transposeFiles(vector<string> inFileNames, string outFileName, bool verbose
             if(bufN>N[f]-done)bufN=N[f]-done;
             if(verbose){
                message("Read file %ld: %ld->%ld",f,done,bufN+done);
+#ifndef BIOC_BUILD
                fflush(stdout);
+#endif
             }
-            FR(j,M){
+            for(j=0;j<M;j++){
                if(seeks[j]!=-1)inFile[f].seekg(seeks[j]);
-               FR(i,bufN){
+               for(i=0;i<bufN;i++){
                   inFile[f]>>valueBuf[j][i];
                }
                seeks[j]=inFile[f].tellg();
                if((j+1<M)&&(seeks[j+1]==-1))inFile[f].ignore(100000000,'\n');
             }
             if(verbose)message(" write\n");
-            FR(i,bufN){
-               FR(j,M)
+            for(i=0;i<bufN;i++){
+               for(j=0;j<M;j++)
                   outFile<<valueBuf[j][i]<<" ";
                outFile<<endl;
             }

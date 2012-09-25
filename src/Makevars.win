@@ -3,4 +3,5 @@ SAMVARS=$(shell echo 'cat(system.file("usretc", .Platform[["r_arch"]], "Rsamtool
 include $(SAMVARS)
 #include F:/PROGRA~1/R/R-2.14.2/library/Rsamtools/usretc/i386/Rsamtools.mk
 
+# CHECK: this might be redundant, remove?
 include Makevars.common

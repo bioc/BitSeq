@@ -2,22 +2,19 @@
 #include<cmath>
 #include<set>
 #include<omp.h>
-//#include<R_ext/Print.h>
+
 using namespace std;
 
-#include "myTimer.h"
-#include "argumentParser.h"
-#include "transcriptInfo.h"
-#include "transcriptSequence.h"
-#include "transcriptExpression.h"
-#include "readDistribution.h"
-#include "tagAlignment.h"
+#include "MyTimer.h"
+#include "ArgumentParser.h"
+#include "TranscriptInfo.h"
+#include "TranscriptSequence.h"
+#include "TranscriptExpression.h"
+#include "ReadDistribution.h"
 #include "common.h"
 
 
 #define Sof(x) (long)x.size()
-#define FOR(x,y,n) for(x=y;x<n;x++)
-#define FR(x,n) FOR(x,0,n)
 //}}}
 
 string toLower(string str){//{{{
@@ -26,10 +23,31 @@ string toLower(string str){//{{{
    return str;
 }//}}}
 
+
+class TagAlignment{//{{{
+   protected:
+      int_least32_t trId;
+//      bool strand; // true = forward; false = reverse
+      double prob,lowProb;
+   public:
+      TagAlignment(long t=0,double p = 0,double lp = 0){
+         trId=(int_least32_t)t;
+//         strand=s;
+         prob=p;
+         lowProb=lp;
+      }
+      long getTrId()const {return trId;}
+      double getProb()const {return prob;}
+      double getLowProb()const {return lowProb;}
+      void setProb(double p){prob=p;}
+}; //}}}
+
 #define FRAG_IS_ALIGNED(x) \
    ( !(x->first->core.flag & BAM_FUNMAP) && \
      ( !(x->first->core.flag & BAM_FPAIRED) || \
        (x->first->core.flag & BAM_FPROPER_PAIR) ) )
+
+
 
 bool readNextFragment(samfile_t* samData, fragmentP &cur, fragmentP &next){//{{{
    static fragmentP tmpF = NULL;
@@ -79,7 +97,7 @@ string programDescription =
    long M=0,i;
    samfile_t *samData=NULL;
    // Intro: {{{
-   buildTime(argv[0]);
+   buildTime(argv[0],__DATE__,__TIME__);
    // Set options {{{
    ArgumentParser args(programDescription,"[alignment file]",1);
    args.addOptionS("o","outFile","outFileName",1,"Name of the output file.");
@@ -93,7 +111,7 @@ string programDescription =
    args.addOptionD("","lenMu","lenMu",0,"Set mean of log fragment length distribution. (l_frag ~ LogNormal(mu,sigma^2))");
    args.addOptionD("","lenSigma","lenSigma",0,"Set sigma^2 (or variance) of log fragment length distribution. (l_frag ~ LogNormal(mu,sigma^2))");
    args.addOptionS("","distributionFile","distributionFileName",0,"Name of file to which read-distribution should be saved.");
-   args.addOptionL("P","procN","procN",0,"Maximum number of threads to be used.",3);
+   args.addOptionL("P","procN","procN",0,"Maximum number of threads to be used. This provides parallelization only when computing non-uniform read distribution (i.e. runs without --uniform flag).",3);
    args.addOptionB("V","veryVerbose","veryVerbose",0,"Very verbose output.");
    args.addOptionL("","noiseMismatches","numNoiseMismatches",0,"Number of mismatches to be considered as noise.",LOW_PROB_MISSES);
    if(!args.parse(*argc,argv))return 0;
@@ -154,7 +172,7 @@ string programDescription =
    trSeq = new TranscriptSequence();
    trSeq->readSequence(args.getS("trSeqFileName")); 
    if(trSeq->getM() != M){
-      error("Main: number of transcripts don't match: %ld vs %ld\n",M,trSeq->getM());
+      error("Main: Number of transcripts in the alignment file and the sequence file are different: %ld vs %ld\n",M,trSeq->getM());
       return 1;
    }
    for(i=0;i<M;i++){
@@ -243,7 +261,7 @@ string programDescription =
 
    // Writing probabilities: {{{
    if(args.verbose)message("Writing alignment probabilities\n");
-   long double prob,probNoise,minProb;
+   double prob,probNoise,minProb;
    prob = probNoise = 0;
    set<string> failedReads;
    vector<TagAlignment> alignments;
@@ -283,7 +301,7 @@ string programDescription =
          if(Sof(alignments)>0){
             outF<<bam1_qname(curF->first)<<" "<<Sof(alignments)+1;
             minProb = 1;
-            FR(i,Sof(alignments)){
+            for(i=0;i<Sof(alignments);i++){
                if(minProb>alignments[i].getLowProb())minProb = alignments[i].getLowProb();
                outF<<" "<<alignments[i].getTrId()
 //                   <<" "<<getStrandC(alignments[i].getStrand())
@@ -297,7 +315,9 @@ string programDescription =
             if(curF->paired)failedReads.insert(bam1_qname(curF->second));
          }
       }
+#ifdef BIOC_BUILD
       R_CheckUserInterrupt();
+#endif
    }
    if(args.verbose)message("Analyzed %ld single reads and %ld paired-end reads.\n",singleN,pairedN);
    outF.close();
@@ -318,7 +338,7 @@ string programDescription =
       trInfo->setEffectiveLength(readD.getEffectiveLengths());
       if(args.verbose)message("Writing transcript information into %s.\n",(args.getS("trInfoFileName")).c_str());
       if(! trInfo->writeInfo(args.getS("trInfoFileName"))){
-         message("Main: writing to %s failed.\nWill try %s-NEW but you should rename it afterwards if you're planning to use it.\n",(args.getS("trInfoFileName")).c_str(),(args.getS("trInfoFileName")).c_str());
+         warning("Main: writing to %s failed.\nWill try %s-NEW but you should rename it afterwards if you're planning to use it.\n",(args.getS("trInfoFileName")).c_str(),(args.getS("trInfoFileName")).c_str());
          trInfo->writeInfo(args.getS("trInfoFileName")+"-NEW", true); // DO OVERWRITE
       }
       timer.split(0,'m');

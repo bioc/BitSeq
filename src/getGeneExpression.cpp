@@ -4,21 +4,16 @@
  *
  */
 #include<cmath>
-#include<cstdio>
 
 using namespace std;
 
-#include "posteriorSamples.h"
-#include "transcriptInfo.h"
+#include "PosteriorSamples.h"
+#include "TranscriptInfo.h"
+#include "ArgumentParser.h"
 #include "common.h"
-#include "argumentParser.h"
-
-#define Sof(x) (long)x.size()
-#define FOR(x,y,n) for(x=y;x<n;x++)
-#define FR(x,n) FOR(x,0,n)
 
 extern "C" int getGeneExpression(int *argc,char* argv[]){
-   buildTime(argv[0]);
+   buildTime(argv[0],__DATE__,__TIME__);
    string programDescription=
 "Computes expression of whole genes.\n\
    [sampleFiles] should contain transposed MCMC samples which are transformed into gene expression samples.";   
@@ -77,26 +72,26 @@ extern "C" int getGeneExpression(int *argc,char* argv[]){
    if(doAdjust){
       vector<double> tr(M);
       if(args.verbose)message("Computing normalization constants, because of length adjustment.\n");
-      FR(j,M){
+      for(j=0;j<M;j++){
          if(args.verbose)progressLog(j,M);
          samples.getTranscript(j,tr);
-         FR(i,N)
+         for(i=0;i<N;i++)
             normals[i] += tr[i]/trFile.L(j);
       }
    }
    if(args.verbose)message("Computing gene expression.\n");
-   FR(g,G){
+   for(g=0;g<G;g++){
       if(args.verbose)progressLog(g,G);
       gM = trFile.getGtrs(g)->size();
-      if(Sof(trs)<gM)trs.resize(gM);
+      if((long)trs.size()<gM)trs.resize(gM);
       //message("%ld\n",gM);
-      FR(j,gM){
+      for(j=0;j<gM;j++){
          m = (*trFile.getGtrs(g))[j];
          samples.getTranscript( m , trs[j]);
       }
-      FR(i,N){
+      for(i=0;i<N;i++){
          sum = 0;
-         FR(j,gM){
+         for(j=0;j<gM;j++){
             if(doAdjust&&(normals[i]>0)){
                m = (*trFile.getGtrs(g))[j];
                sum+=(trs[j][i] / trFile.L(m)) / normals[i];

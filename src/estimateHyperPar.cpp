@@ -10,16 +10,12 @@
 #include "boost/random/mersenne_twister.hpp"
 using namespace std;
 
-#include "posteriorSamples.h"
-#include "myTimer.h"
-#include "argumentParser.h"
+#include "PosteriorSamples.h"
+#include "MyTimer.h"
+#include "ArgumentParser.h"
 #include "lowess.h"
-#include "transcriptExpression.h"
+#include "TranscriptExpression.h"
 #include "common.h"
-
-#define Sof(x) (long)x.size()
-#define FOR(x,y,n) for(x=y;x<n;x++)
-#define FR(x,n) FOR(x,0,n)
 //}}}
 // Defaults: {{{
 #define ALPHA_PROP 0.1
@@ -48,7 +44,7 @@ string programDescription =
    To distinguish conditions use C between them e.g.:\n\
       samplesC1-R1.rpkm samplesC1-R2.rpkm C samplesC2-R1.rpkm samplesC2-R2.rpkm";
    // Intro: {{{
-   buildTime(argv[0]);
+   buildTime(argv[0],__DATE__,__TIME__);
    // Set options {{{
    ArgumentParser args(programDescription,"[sampleFiles]",1);
    args.addOptionB("V","veryVerbose","veryVerbose",0,"More verbose output.");
@@ -57,12 +53,12 @@ string programDescription =
    args.addOptionS("","meanFile","meanFileName",0,"Name of the file containing joint mean and variance.");
    args.addOptionL("g","groupsNumber","groupsN",0,"Number of groups of transcript of similar size.",200);
    args.addOptionL("s","samplesNumber","samplesN",0,"Number of samples generated for each group.",SAMPLES_N);
-   args.addOptionD("l","lambda0","lambda0",0,"Precision scaling parameter lambda0.",0.5);
+   args.addOptionD("l","lambda0","lambda0",0,"Precision scaling parameter lambda0.",2.0);
    args.addOptionD("","exThreshold","exT",0,"Threshold of lowest expression for which the estimation is done.",-5);
    args.addOptionB("S","smoothOnly","smoothOnly",0,"Input file contains previously sampled hyperparameters which should smoothed only.");
    args.addOptionD("","lowess-f","lowess-f",0,"Parameter F for lowess smoothing specifying amount of smoothing.",0.2);
    args.addOptionL("","lowess-steps","lowess-steps",0,"Parameter Nsteps for lowess smoothing specifying number of iterations.",5);
-   args.addOptionB("","noforce","noforce",0,"Do not force smoothing of the hyperparameters.",true);
+   args.addOptionB("","noforce","noforce",0,"Do not force smoothing of the parameters.",true);
    if(!args.parse(*argc,argv))return 0;
    // }}}
 
@@ -93,7 +89,7 @@ string programDescription =
    ofstream outF(args.getS("outFileName").c_str());
    if(!outF.is_open()){
       error("Main: Out file open failed.\n");
-      return 0;
+      return 1;
    }
    ///}}}
 
@@ -102,7 +98,7 @@ string programDescription =
       ifstream paramsF(args.args()[0].c_str());
       if(!paramsF.is_open()){
          error("Main: Input file open failed.\n");
-         return 0;
+         return 1;
       }
       char buf[300];
       while((paramsF.good())&&(paramsF.peek()=='#')){
@@ -175,14 +171,14 @@ string programDescription =
          m = 0;
          while((curM<M)&&(m<subM_MAX)){
             if(trExp.exp(curM)<args.getD("exT")){
-               if(args.verbose)message("skipping expression: %Lg\n",trExp.exp(curM));
+               if(args.verbose)message("skipping expression: %lg\n",trExp.exp(curM));
                break;
             }
-            FR(r,RTN){
+            for(r=0;r<RTN;r++){
                good = cond.getTranscript(r, trExp.id(curM), tr[m][r],samplesN+MAX_RETRIES);
                if(!good)break;
                if(logged) // should check whether samples are logged as well
-                  FR(samp,samplesN+MAX_RETRIES){
+                  for(samp=0;samp<samplesN+MAX_RETRIES;samp++){
                      tr[m][r][samp] = (tr[m][r][samp] == 0)? LOG_ZERO:log(tr[m][r][samp]);
                   }
             }
@@ -203,15 +199,15 @@ string programDescription =
          if(storeAll)paramsF<<"# mean: "<<mean<<"  subM: "<<subM<<endl;
          samplesREDO = 0;
          //}}}
-         FR(samp,samplesN+samplesREDO){
+         for(samp=0;samp<samplesN+samplesREDO;samp++){
             // Computing Badd_gc and initializing {{{
-            FR(m,subM){
+            for(m=0;m<subM;m++){
                i=0; // counter over all replicates;
-               FR(c,C){
+               for(c=0;c<C;c++){
                   sum = 0;
                   sumS = 0;
                   Rc=cond.getRC(c);
-                  FR(r,Rc){
+                  for(r=0;r<Rc;r++){
                      sum += tr[m][i][samp];
                      sumS += tr[m][i][samp]*tr[m][i][samp];
                      i++;
@@ -227,7 +223,9 @@ string programDescription =
             normalDistributionB.param(nDP(0,BETA_PROP*proposalMultiplier));
             maxIter=0;
             breaked = false;
+#ifdef BIOC_BUILD
 	    R_CheckUserInterrupt();
+#endif
             //}}}
             while((acceptR<0.25)||(acceptR>0.5)||(old_mult!=proposalMultiplier)){
                // Convergence control based on acceptance ratio. {{{
@@ -257,8 +255,10 @@ string programDescription =
                }
                //}}}
                acceptR=0;
+#ifdef BIOC_BUILD
 	       R_CheckUserInterrupt();
-               FR(i,1000){ // Sampling 1000 samples {{{
+#endif
+               for(i=0;i<1000;i++){ // Sampling 1000 samples {{{
                   alphaP = alpha + normalDistributionA(rng_mt);
                   if(alphaP<0)alphaP = -alphaP;
                   betaP= beta + normalDistributionB(rng_mt);
@@ -268,13 +268,13 @@ string programDescription =
                   }else{
                      prob = 1.0;
                      probAll = pow(betaP,alphaP) / pow(beta,alpha);
-                     FR(c,C){
+                     for(c=0;c<C;c++){
                         probC = lgamma(alphaP + cond.getRC(c)/2.0)+
                             lgamma(alpha) -
                             lgamma(alpha + cond.getRC(c)/2.0) -
                             lgamma(alphaP);
                         probC = probAll * exp(probC);
-                        FR(m,subM){
+                        for(m=0;m<subM;m++){
       //                  message(" (var_g %lg) (pow %lg %lg %lg) ",bAdd[g]/2.0,pow(beta+bAdd[g]/2, alpha),pow(betaP+bAdd[g]/2, alphaP),pow((beta+bAdd[g]/2)/(betaP+bAdd[g]/2),SUB_N/2));
                            prob *= probC;
                            prob *= pow(beta+bAdd[m][c], alpha) / 
@@ -315,7 +315,12 @@ string programDescription =
             }
             //}}}
          }
-         if((args.verbose)&&(!args.flag("veryVerbose"))){message(".");fflush(stdout);}
+         if((args.verbose)&&(!args.flag("veryVerbose"))){
+            message(".");
+#ifndef BIOC_BUILD
+            fflush(stdout);
+#endif
+         }
       }
       cond.close();
       if(storeAll)paramsF.close();
@@ -377,7 +382,7 @@ string programDescription =
          while((i<pAll)&&((alpS[i]<=0)||(betS[i]<=0))){
             message("Removing: %lg %lg %lg\n",alpS[i],betS[i],exp[i]);
             alpS.erase(alpS.begin()+i); betS.erase(betS.begin()+i); exp.erase(exp.begin()+i);
-            pAll = Sof(alpS);
+            pAll = alpS.size();
          }
    }
    pDistinct = 1;

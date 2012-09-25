@@ -14,13 +14,13 @@
  *  See original documentation below the code for details.
  * 
  */
-#include"lowess.h"
 #include<algorithm>
 #include<cmath>
 #include<fstream>
 
 using namespace std;
 
+#include "lowess.h"
 #include "common.h"
 
 void lowess(const vector<double> &x, const vector<double> &y, double f, long nsteps, vector<double> &ys){//{{{
