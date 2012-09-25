@@ -101,8 +101,13 @@ res1 <- getExpression("data-c0b0.sam",
    log = TRUE,
    MCMC_burnIn=200,
    MCMC_samplesN=200,
-   MCMC_scaleReduction=1.1)
+   MCMC_samplesSave=50,
+   seed=47)
 @
+
+The data being processed in this vignette is a small, example dataset, thus it is safe to use lower values for \Rvar{MCMC\_burnIn}, \Rvar{MCMC\_samplesN}, \Rvar{MCMC\_samplesSave}.
+For normal sized dataset, you can use default values of these parameters (all three parameters have default value 1000).
+
 To view histogram of log RPKM expression use:
 <<eval=FALSE >>=
 hist(res1$exp$mean)
@@ -169,7 +174,7 @@ parseAlignment( "data-c0b0.sam",
    trInfoFile = "data.tr",
    verbose = TRUE )
 @
-The program pass the SAM file twice and produces the \FILE{data-c0b0.prob} file with the alignment probabilities as well as transcript information file \FILE{data.tr} which contains transcript names and lengths extracted from the SAM file.
+The program passes the SAM file twice and produces the \FILE{data-c0b0.prob} file with the alignment probabilities as well as transcript information file \FILE{data.tr} which contains transcript names and lengths extracted from the SAM file.
 
 \subsubsection{Estimating transcript expression}
 
@@ -178,7 +183,7 @@ The default MCMC algorithm is the Collapsed Gibbs sampling which converges faste
 It is the most time consuming part of the \bitseq{} analysis process as it uses multiple independent chains to sample the expression values and it iterates until the chains converge to the same distribution. 
 
 The following example runs the sampler using the \FILE{.prob} file from previous step, produces expression in RPKM measure and produces files with the prefix \FILE{data-c0b0}. 
-It will produce two files, file \FILE{data-c0b0.rpkm} will contain a row for each transcript with \Rvar{MCMC\_samplesSave} RPKM expression samples from every chain. 
+It will produce two files, file \FILE{data-c0b0.rpkm} will contain a row for each transcript with \Rvar{MCMC\_samplesSave} RPKM expression samples. 
 The second file \FILE{data-c0b0.thetaMeans} will contain the mean relative expression values for every transcript.
 
 <<keep.source=FALSE >>=
@@ -189,17 +194,35 @@ estimateExpression( "data-c0b0.prob",
    MCMC_burnIn = 200,
    MCMC_samplesN = 200,
    MCMC_samplesSave = 100,
-   MCMC_scaleReduction = 1.1,
    MCMC_chainsN = 2 )
 @
 
 The behavior of the sampling algorithm can be adjusted by optional arguments, such as \Rvar{MCMC\_chainsN} which selects the number of chains.
-After producing \Rvar{MCMC\_burnIn} burn-in samples, the algorithm produces first \Rvar{MCMC\_samplesN} samples from each chain in the first iteration.
+After producing \Rvar{MCMC\_burnIn} burn-in samples, the algorithm produces first \Rvar{MCMC\_samplesN} samples from each chain in the first iteration. 
+These are used to estimate the number of samples needed for recording \Rvar{MCMC\_samplesSave} effective samples, in the second, final, iteration.
+
+\subsubsection{Convergence checking via possible scale reduction estimation}
+
+The \Rfunction{estimateExpressionLegacy} uses different convergence checking mechanism which mostly results in multiple iterations, producing more samples in total.
 After each iteration, the possible scale reduction of marginal posterior variance $\widehat{R}$ is computed for each transcript expression and the ten highest values are reported.
-If the average of ten highest possible scale reductions is less than the \Rvar{MCMC\_scaleReduction} parameter, then the sampler produces one last iteration during which subset of \Rvar{MCMC\_samplesSave} MCMC samples is recorded from each chain.
+If the average of ten highest possible scale reductions is less than the \Rvar{MCMC\_scaleReduction} parameter, then the sampler produces one last iteration during which subset of \Rvar{MCMC\_samplesSave} samples is recorded.
 Otherwise the program continues with next iteration in which it produces twice as many samples.
 The program terminates either after reaching the target scale reduction or after iteration which produces \Rvar{MCMC\_samplesNmax} samples.
-All these parameters can be set also within a parameters file specified by the option \Rvar{parFile} with the advantage that the parameters such as \Rvar{MCMC\_scaleReduction} or \Rvar{MCMC\_scaleReduction} can be adjusted while the sampler is running, example of the parameters file \FILE{parameters1.txt} is provided in the \FILE{extdata} directory.
+All these parameters can be set also within a parameters file specified by the option \Rvar{parFile} with the advantage that the parameters such as \Rvar{MCMC\_scaleReduction} or \Rvar{MCMC\_samplesNmax} can be adjusted while the sampler is running, example of the parameters file \FILE{parameters1.txt} is provided in the \FILE{extdata} directory.
+
+<<keep.source=FALSE >>=
+estimateExpressionLegacy( "data-c0b0.prob", 
+   outFile = "data-c0b0", 
+   outputType = "RPKM",
+   trInfoFile = "data.tr",
+   MCMC_burnIn = 200,
+   MCMC_samplesN = 200,
+   MCMC_samplesSave = 100,
+   MCMC_scaleReduction = 1.1,
+   MCMC_chainsN = 2 )
+@
+
+\subsubsection{Examining the samples}
 
 Again, we can view the resulting file (\FILE{data-c0b0.rpkm} in this case) using the function \Rfunction{loadSamples}.
 <<eval=FALSE >>=
@@ -273,7 +296,6 @@ res1 <- getExpression("data-c0b0.sam",
    log = TRUE,
    MCMC_burnIn=200,
    MCMC_samplesN=200,
-   MCMC_scaleReduction=1.1,
    pretend=TRUE)
 @
 
@@ -284,9 +306,9 @@ res1 <- getExpression("data-c0b0.sam",
 \begin{thebibliography}{10}
 
 \bibitem{paperArxiv}
-Glaus, P., Honkela, A. and Rattray, M. (2012)
+Glaus, P., Honkela, A. and Rattray, M. (2012).
 \newblock Identifying differentially expressed transcripts from RNA-seq data with biological variation.
-\newblock {\tt arXiv:1109.0863v2 [q-bio.GN]}.
+\newblock {\em Bioinformatics\/}, {\bf 28}(13), 1721-1728.
 
 \end{thebibliography}
 

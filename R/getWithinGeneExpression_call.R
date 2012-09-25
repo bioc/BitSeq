@@ -17,7 +17,7 @@ getWithinGeneExpression <- function(sampleFile, outFile=NULL, trInfoFile=NULL, p
    args <- c('getWithinGeneExpression', sampleFile, '--outFile', outFile, '--trInfoFile', trInfoFile);
 
    if(pretend){
-      print(paste(args,collapse=" "))
+      writeLines(.specialPaste(args))
    }else{
       argc <- length(args);
       result <- .C("_getWithinGeneExpression", as.integer(argc), as.character(args));

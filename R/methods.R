@@ -75,7 +75,7 @@ getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, ty
       message("## Pre-Computing alignment probabilities with uniform read distribution.");
       parseAlignment(alignFile, probUF, trSeqFile, inputFormat=iFormat, uniform=FALSE,pretend=pretend);
       message("## Pre-Computing expression with uniform read distribution.");
-      estimateExpression(probUF, paste(outPrefix,"-U",sep=""), outputType="theta", MCMC_burnIn=1000, MCMC_samplesN=1000, MCMC_samplesSave=10, MCMC_samplesNmax=5000, MCMC_chainsN=2, MCMC_scaleReduction=1.5,pretend=pretend);
+      estimateExpression(probUF, paste(outPrefix,"-U",sep=""), outputType="theta", MCMC_burnIn=1000, MCMC_samplesN=1000, MCMC_samplesSave=10, MCMC_chainsN=2, pretend=pretend);
       exprFile <- paste(outPrefix,"-U",".thetaMeans",sep=""); 
    }else{
       exprFile <- NULL;
@@ -131,7 +131,7 @@ writeSamples <- function(data,fileName){
    }
    header <- sprintf("# T (transposed)\n# M %i\n# N %i",dim(data)[1],dim(data)[2]);
    writeLines(header,fileName);
-   write.table(as.data.frame(data),fileName,append=TRUE,row.name=FALSE,col.names=FALSE);
+   write.table(as.data.frame(data),fileName,append=TRUE,row.names=FALSE,col.names=FALSE);
 }
 
 
@@ -148,4 +148,20 @@ writeSamples <- function(data,fileName){
 # get extension of filename
 .getExt <- function(name){
    return(tail(unlist(strsplit(name,split="\\.")),1));
+}
+
+# paste string so that is within 75ch width and lines are ending with \ (i.e. it's usable in bash
+.specialPaste <-function(strVec){
+   ret <- strVec[1];
+   c_len <- nchar(ret);
+   for(str in tail(strVec, -1)){
+      if(c_len+nchar(str)<75){
+         ret <- paste(ret, str);
+         c_len <- c_len + nchar(str) + 1;
+      }else{
+         ret <- sprintf("%s\\\n %s",ret,str);
+         c_len <- nchar(str)+1;
+      }
+   }
+   return(ret);
 }

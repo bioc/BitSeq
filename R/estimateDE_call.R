@@ -22,7 +22,7 @@ estimateDE <- function( cond1, cond2, outFile, parFile, lambda0=NULL, samples=NU
    }
 
    if(pretend){
-      print(paste(args,collapse=" "))
+      writeLines(.specialPaste(args))
    }else{
       argc <- length(args);
       ##dyn.load(paste("src/estimateDE", .Platform$dynlib.ext, sep=""))

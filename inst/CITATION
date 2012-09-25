@@ -1,12 +1,15 @@
 citHeader("To cite package 'BitSeq' in publications use:")
 
 citEntry(entry="Article",
-   author = "Peter Glaus and Antti Honkela and Magnus Rattray",
-   title = "Identifying differentially expressed transcripts from RNA-seq data with biological variation",
-   year = "2012",
-   journal = "arXiv",
-   number = "1109.0863v2 [q-bio.GN]",
-   url = "http://http://arxiv.org/abs/1109.0863v2",
-   textVersion= "Glaus, P., Honkela, A. and Rattray M. (2012) Identifying differentially expressed transcripts from RNA-seq data with biological variation. arXiv:1109.0863v2 [q-bio.GN]"
+   author = "Glaus, Peter and Honkela, Antti and Rattray, Magnus", 
+   title = "Identifying differentially expressed transcripts from RNA-seq data with biological variation", 
+   volume = "28", 
+   number = "13", 
+   pages = "1721-1728", 
+   year = "2012", 
+   doi = "10.1093/bioinformatics/bts260", 
+   url = "http://bioinformatics.oxfordjournals.org/content/28/13/1721.abstract", 
+   journal = "Bioinformatics"
+   textVersion= "Glaus, P., Honkela, A. and Rattray, M. (2012). Identifying differentially expressed transcripts from RNA-seq data with biological variation. Bioinformatics, 28(13), 1721-1728."
 )
 

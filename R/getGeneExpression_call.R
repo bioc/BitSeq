@@ -17,7 +17,7 @@ getGeneExpression <- function(sampleFile, outFile=NULL, trInfoFile=NULL, pretend
    args <- c('getGeneExpression', sampleFile, '--outFile', outFile, '--trInfoFile', trInfoFile);
 
    if(pretend){
-      print(paste(args,collapse=" "))
+      writeLines(.specialPaste(args))
    }else{
       argc <- length(args);
       result <- .C("_getGeneExpression", as.integer(argc), as.character(args));

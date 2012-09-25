@@ -49,7 +49,7 @@ parseAlignment <- function( alignFile, outFile, trSeqFile, inputFormat=NULL, trI
    }
 
    if(pretend){
-      print(paste(args,collapse=" "))
+      writeLines(.specialPaste(args))
    }else{
       argc <- length(args);
       ##dyn.load(paste("src/parseAlignment", .Platform$dynlib.ext, sep=""));

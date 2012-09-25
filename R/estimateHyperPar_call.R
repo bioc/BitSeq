@@ -52,7 +52,7 @@ estimateHyperPar <- function( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL
    }
 
    if(pretend){
-      print(paste(args,collapse=" "))
+      writeLines(.specialPaste(args))
    }else{
       argc <- length(args);
       ## dyn.load(paste("src/estimateHyperPar", .Platform$dynlib.ext, sep=""));

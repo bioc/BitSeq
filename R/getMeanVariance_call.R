@@ -16,7 +16,7 @@ getMeanVariance <- function(sampleFiles, outFile, log=NULL, type=NULL, verbose=N
    }
 
    if(pretend){
-      print(paste(args,collapse=" "))
+      writeLines(.specialPaste(args))
    }else{
       argc <- length(args);
       ## dyn.load(paste("src/getVariance", .Platform$dynlib.ext, sep=""));
