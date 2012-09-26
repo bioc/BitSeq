@@ -264,7 +264,7 @@ estimateHyperPar( outFile = "data.par",
 
 The model for Differential Expression analysis uses the posterior samples from expression analysis to infer samples of the mean expression for each transcript in every condition.
 Function \Rfunction{estimateDE} computes the samples and uses them to compute the Probability of Positive Log Ratio, which is the probability of a transcript being up-regulated in the first condition as well as inverse probability of transcript being down-regulated in the first condition.
-The PPLR with confidence intervals, mean $\log_2$ fold change and mean condition mean expression are saved into the final output file with extension \FILE{.pplr} and prefix specified by the option \Rvar{outFile}:
+The PPLR, mean $\log_2$ fold change with confidence intervals and mean condition mean expression are saved into the final output file with extension \FILE{.pplr} and prefix specified by the option \Rvar{outFile}:
 <<>>=
 estimateDE(cond1Files, cond2Files,
    outFile = "data",

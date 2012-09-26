@@ -42,7 +42,7 @@ getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL,
       data <- NULL
    }else{
       data <- loadSamples( pplrFN, trInfoFile);
-      colnames(data)<-c("pplr", "ConfidenceLow", "ConfidenceHigh", "log2FC", "meanC1", "meanC2");
+      colnames(data)<-c("pplr", "log2FC", "ConfidenceLow", "ConfidenceHigh", "meanC1", "meanC2");
    }
    return(list(pplr=data,fn=list(pplr=pplrFN,C1samples=c1Res,C2samples=c2Res)));
 }

@@ -24,7 +24,7 @@ Advanced options:
 \details{
 This function takes as an input expression samples from biological replicates of two conditions and hyperparameters over precision distribution inferred by \code{\link{estimateHyperPar}}.
 It uses pseudo-vectors of expression samples from all replicates to infer condition mean expression for each condition. 
-The condition mean expression samples are used for computation of the Probability of Positive Log Ratio (PPLR), with confidence intervals as well as \eqn{\log_2}{log2} fold change of expression and average condition mean expression for each transcript. 
+The condition mean expression samples are used for computation of the Probability of Positive Log Ratio (PPLR) as well as \eqn{\log_2}{log2} fold change of expression with confidence intervals and average condition mean expression for each transcript. 
 Optionally the function can produce also the samples of condition mean expression for each condition.
 }
 \value{

@@ -138,7 +138,7 @@ string programDescription =
       outF<<args.args()[i]<<" ";
    }
    outF<<"\n# lambda_0 "<<args.getD("lambda0")<<"\n# T \n# M "<<M<<"\n# N "<<N<<"\n# Columns:\n";
-   outF<<"# PPLR ConfidenceLow ConfidenceHigh log2FC [mean condition mean expressions]"<<endl;
+   outF<<"# PPLR log2FC ConfidenceLow ConfidenceHigh [mean condition mean expressions]"<<endl;
    // }}}
 
    // variables {{{
@@ -255,7 +255,7 @@ string programDescription =
       sort(difs.begin(),difs.end());
       cfLow = difs[(long)(N/100.*args.getD("cf"))];
       cfHigh = difs[(long)(N-N/100.*args.getD("cf"))];
-      outF<<pplr<<" "<<cfLow<<" "<<cfHigh<<" "<<logFC;
+      outF<<pplr<<" "<<logFC<<" "<<cfHigh<<" "<<cfLow;
       for(c=0;c<C;c++)outF<<" "<<mu_0[c];
       outF<<endl;
       if(args.flag("samples")){//{{{
