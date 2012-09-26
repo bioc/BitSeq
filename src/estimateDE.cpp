@@ -255,7 +255,7 @@ string programDescription =
       sort(difs.begin(),difs.end());
       cfLow = difs[(long)(N/100.*args.getD("cf"))];
       cfHigh = difs[(long)(N-N/100.*args.getD("cf"))];
-      outF<<pplr<<" "<<logFC<<" "<<cfHigh<<" "<<cfLow;
+      outF<<pplr<<" "<<logFC<<" "<<cfLow<<" "<<cfHigh;
       for(c=0;c<C;c++)outF<<" "<<mu_0[c];
       outF<<endl;
       if(args.flag("samples")){//{{{
