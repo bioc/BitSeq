@@ -1,7 +1,7 @@
 Package: BitSeq
 ===============
 
-Version: 1.2.0 (20.9.2012)
+Version: 1.2.0 (25.9.2012)
 - new internal structure (not visible to user)
 - estimateExpression has a new convergence criterion which should result in producing fewer samples (faster)
 

@@ -21,7 +21,7 @@ Peter Glaus, Antti Honkela and Magnus Rattray
 Maintainer: Peter Glaus <glaus@cs.man.ac.uk>
 }
 \references{
-Glaus, P., Honkela, A. and Rattray M. (2012) Identifying differentially expressed transcripts from RNA-seq data with biological variation. arXiv:1109.0863v2 [q-bio.GN]
+Glaus, P., Honkela, A. and Rattray, M. (2012). Identifying differentially expressed transcripts from RNA-seq data with biological variation. Bioinformatics, 28(13), 1721-1728.
 }
 \examples{\dontrun{
 ## basic use
