@@ -1,5 +1,5 @@
 ## compute PPLR for two conditions
-getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, pretend=FALSE ){
+getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, norm=NULL, pretend=FALSE ){
    ## pretend needs prefix
    if(pretend && is.null(outPrefix)){
       message("In case of no outPrefix provided this function uses R temporary directories which are only valid during the current session.")
@@ -25,11 +25,11 @@ getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL,
    meanFile <- paste(outPrefix, "Lmean", sep=".");
    parFile <- paste(outPrefix, "par", sep=".");
    message("Computing overall mean.");
-   getMeanVariance(c(cond1,cond2),meanFile,log=TRUE,pretend=pretend);
+   getMeanVariance(c(cond1,cond2),meanFile,log=TRUE,norm=norm,pretend=pretend);
    message("Estimating hyperparameters.");
-   estimateHyperPar(parFile,cond1,cond2,meanFile=meanFile,pretend=pretend);
+   estimateHyperPar(parFile,cond1,cond2,meanFile=meanFile,norm=norm,pretend=pretend);
    message("Estimating condition mean expression and PPLR.");
-   estimateDE(cond1,cond2,outPrefix,parFile,samples=samples,pretend=pretend);
+   estimateDE(cond1,cond2,outPrefix,parFile,samples=samples,norm=norm,pretend=pretend);
    if(samples){
       c1Res <- paste(outPrefix,"-C0.est",sep="");
       c2Res <- paste(outPrefix,"-C1.est",sep="");

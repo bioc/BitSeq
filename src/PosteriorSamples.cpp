@@ -24,6 +24,7 @@ string lower(string str){
 PosteriorSamples::PosteriorSamples(){//{{{
    N=0;
    M=0;
+   norm = 1.0;
    failed=true;
    transposed=true;
    areLogged=false;
@@ -103,6 +104,8 @@ bool PosteriorSamples::getTranscript(long tr,vector<double> &trSamples){//{{{
       }
       for(i=0;(i<N)&&(samplesF.good());i++){
          samplesF>>trSamples[i];
+         // apply normalisation.
+         trSamples[i] *= norm;
          if(samplesF.eof())break;
          if(samplesF.fail()){
             samplesF.clear();
@@ -120,6 +123,11 @@ bool PosteriorSamples::getTranscript(long tr,vector<double> &trSamples){//{{{
       }
    }else{
       trSamples = samples[tr];
+      // FIXME(glausp) it is not very efficient to do this every time. 
+      // However this part only works for small data files.
+      if(norm!=1.0){
+         for(long i=0;i<N;i++)trSamples[i] *= norm;
+      }
    }
    return good;
 }//}}}
@@ -226,6 +234,16 @@ bool Conditions::init(long &c,long &m,long &n,string trFileName, vector<string> 
       return true;
    }
    return false; // we should not get here
+}//}}}
+bool Conditions::setNorm(vector<double> norms){//{{{
+   if((long)norms.size()!=CN){
+      error("Conditions: The number of normalization constants does not match number of experiments (files with samples).\n");
+      return false;
+   }
+   for(long i=0;i<CN;i++){
+      samples[i].setNorm(norms[i]);
+   }
+   return true;
 }//}}}
 bool Conditions::getTranscript(long cond, long rep, long tr, vector<double> &trSamples){//{{{
    if((cond>C)||(rep>cIndex[cond].SS)){

@@ -24,6 +24,7 @@ extern "C" int getVariance(int *argc,char* argv[]){
    args.addOptionS("o","outFile","outFileName",1,"Name of the output file.");
    args.addOptionB("l","log","log",0,"Use logged values.");
    args.addOptionS("t","type","type",0,"Type of variance, possible values: [sample,sqDif] for sample variance or squared difference.","sample");
+   args.addOptionS("","norm","normalization",0,"Normalization constants for each input file provided as comma separated list of doubles (e.g. 1.0017,1.0,0.9999 ).");
    if(!args.parse(*argc,argv)){return 0;}
    bool doLog=args.flag("log");
    if(doLog){ if(args.verbose)message("Using logged values.\n");}
@@ -36,6 +37,12 @@ extern "C" int getVariance(int *argc,char* argv[]){
    if(! (cond.init(M,N,"NONE", args.args() ))){
       error("Main: Failed loading MCMC samples.\n");
       return 1;
+   }
+   if(args.isSet("normalization")){
+      if(! cond.setNorm(args.getTokenizedS2D("normalization"))){
+         error("Main: Appying normalization constants failed.\n");
+         return 1;
+      }
    }
    RN=cond.getRN();  
    if((args.getS("type")=="sqDif")&&(RN>2)&&(args.verbose)){//{{{

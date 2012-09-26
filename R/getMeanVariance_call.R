@@ -2,7 +2,7 @@
 #   args.addOptionB("l","log","log",0,"Use logged values.");
 #   args.addOptionS("t","type","type",0,"Type of variance, possible values: [sample,sqDif] for sample variance or squared difference.","sample");
 
-getMeanVariance <- function(sampleFiles, outFile, log=NULL, type=NULL, verbose=NULL, pretend=FALSE){
+getMeanVariance <- function(sampleFiles, outFile, log=NULL, type=NULL, verbose=NULL, norm=NULL, pretend=FALSE){
 
    args <- c('getVariance', sampleFiles, '--outFile', outFile);
    if ((!is.null(log)) && (log)) {
@@ -14,7 +14,12 @@ getMeanVariance <- function(sampleFiles, outFile, log=NULL, type=NULL, verbose=N
    if (!is.null(verbose) && (verbose)) {
       args <- c(args, '--verbose')
    }
-
+   if (!is.null(norm)) {
+      if(length(sampleFiles) != length(norm)){
+         stop("The number of normalization constants has to match the number of sample files.");
+      }
+      args <- c(args, '--norm', paste(norm, collapse=","));
+   }
    if(pretend){
       writeLines(.specialPaste(args))
    }else{

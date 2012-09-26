@@ -9,6 +9,22 @@
 #define SS second
 #define Sof(x) (long)x.size()
 
+vector <double> tokenizeD(const string &input,const string &space = ","){//{{{
+   vector <double> ret;
+   long pos=0,f=0,n=input.size();
+   while((pos<n)&&(f<n)&&(f>=0)){
+      f=input.find(space,pos);
+      if(f==pos)pos++;
+      else{
+         if((f <n)&&(f>=0)){
+            ret.push_back(atof(input.substr(pos,f-pos).c_str()));
+            pos=f+1;
+         }
+      }
+   }
+   if(pos<n)ret.push_back(atof(input.substr(pos,n-pos).c_str()));
+   return ret;
+} //}}}
 
 
 // GET {{{
@@ -37,6 +53,12 @@ bool ArgumentParser::flag(string name){
    if(!existsOption(name))error("ArgumentParser: argument name %s unknown.\n",(name).c_str());
    return isSet(name);
 }//}}}
+vector<double> ArgumentParser::getTokenizedS2D(string name){
+   if(!existsOption(name))error("ArgumentParser: argument name %s unknown.\n",name.c_str());
+   if(mapS.find(name)!=mapS.end())
+      return tokenizeD(mapS[name]);
+   return vector<double>();
+}
 bool ArgumentParser::parse(int argc,char * argv[]){//{{{
 //   for(long i=0;i<argc;i++)message("_%s_\n",(args[i]).c_str());
    // add verbose if  possible {{{

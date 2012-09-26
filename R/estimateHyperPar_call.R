@@ -11,7 +11,7 @@
 #  args.addOptionL("","lowess-steps","lowess-steps",0,"Parameter Nsteps for lowess smoothing specifying number of iterations.",5);
 #  args.addOptionB("","force","force",0,"Force smoothing",true);
 
-estimateHyperPar <- function( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL, meanFile=NULL, force=TRUE, exThreshold=NULL, lambda0=NULL, paramsAllFile=NULL, smoothOnly=NULL, lowess_f=NULL, lowess_steps=NULL, verbose=NULL, veryVerbose=NULL, pretend=FALSE ){
+estimateHyperPar <- function( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL, meanFile=NULL, force=TRUE, exThreshold=NULL, lambda0=NULL, paramsAllFile=NULL, smoothOnly=NULL, lowess_f=NULL, lowess_steps=NULL, verbose=NULL, veryVerbose=NULL, norm=NULL, pretend=FALSE ){
    if (is.null(paramsInFile)){
       args <- c('estimateHyperPar',cond1,'C',cond2, '--outFile', outFile)
    }else{
@@ -49,6 +49,12 @@ estimateHyperPar <- function( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL
    }
    if (!is.null(veryVerbose) && (veryVerbose)) {
       args <- c(args, '--veryVerbose')
+   }
+   if (!is.null(norm)) {
+      if(length(cond1)+length(cond2) != length(norm)){
+         stop("The number of normalization constants has to match the number of sample files.");
+      }
+      args <- c(args, '--norm', paste(norm, collapse=","));
    }
 
    if(pretend){

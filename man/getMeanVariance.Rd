@@ -3,14 +3,16 @@
 \title{Calculate mean and variance of expression samples}
 \description{Calculate mean and variance of expression samples or log-expression samples}
 \usage{
-getMeanVariance(sampleFiles, outFile, log=NULL, type=NULL, verbose=NULL, pretend=FALSE)
+getMeanVariance(sampleFiles, outFile, log=NULL, type=NULL, verbose=NULL,
+      norm=NULL, pretend=FALSE)
 }
 \arguments{
-\item{sampleFiles}{List of one or more files containing the expression samples.}
+\item{sampleFiles}{Vector of one or more files containing the expression samples.}
 \item{outFile}{Name of the output file.}
 \item{log}{Use logged values.}
 \item{type}{Type of variance, possible values: \code{sample},\code{sqDif} for sample variance or squared difference.}
 \item{verbose}{Verbose output.}
+\item{norm}{Vector of (multiplicative) normalization constants for library size normalization of expression samples. Number of constants has to match the number of expression samples files.} 
 \item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 }
 \details{
@@ -24,9 +26,10 @@ Variance of two experiments (i.e. technical or biological replicates) can be est
 \author{Peter Glaus}
 
 \seealso{\code{\link{estimateExpression}}}
-\examples{\dontrun{
-sampleFileNames = c("data-c0b0.rpkm","data-c0b1.rpkm","data-c1b0.rpkm","data-c1b1.rpkm")
-getMeanVariance(sampleFiles=sampleFileNames, outFile="data.means", log=1)
-}}
+\examples{
+setwd(system.file("extdata",package="BitSeq"));
+sampleFileNames = c("data-c1b0.rpkm","data-c1b1.rpkm")
+getMeanVariance(sampleFiles=sampleFileNames, outFile="data-c1.Lmean", log=1, norm=c(1.0017, 0.9998))
+}
 
 \keyword{expression mean}

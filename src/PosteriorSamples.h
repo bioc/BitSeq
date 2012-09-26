@@ -9,6 +9,7 @@ const long PS_maxStoredSamples = 100000000;
 class PosteriorSamples{//{{{
    private:
       long N,M;
+      double norm;
       bool transposed,failed,areLogged;
       ifstream samplesF;
       vector<long> lines;
@@ -23,6 +24,7 @@ class PosteriorSamples{//{{{
    bool getTranscript(long tr, vector<double> &trSamples);
    void close();
    bool logged(){return areLogged;}
+   void setNorm(double norm){this->norm = norm;}
 };//}}}
 
 class Conditions{//{{{
@@ -43,6 +45,7 @@ class Conditions{//{{{
       long getC(){ return C;}
       bool init(long &c,long &m,long &n,string trFileName, vector<string> filesGot);
       bool init(long &m,long &n,string trFileName, vector<string> filesGot);
+      bool setNorm(vector<double> norms);
       bool getTranscript(long cond, long rep, long tr, vector<double> &trSamples);
       bool getTranscript(long cond, long tr, vector<double> &trSamples);
       bool getTranscript(long cond, long tr, vector<double> &trSamples, long samplesN);

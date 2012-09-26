@@ -59,6 +59,7 @@ string programDescription =
    args.addOptionD("","lowess-f","lowess-f",0,"Parameter F for lowess smoothing specifying amount of smoothing.",0.2);
    args.addOptionL("","lowess-steps","lowess-steps",0,"Parameter Nsteps for lowess smoothing specifying number of iterations.",5);
    args.addOptionB("","noforce","noforce",0,"Do not force smoothing of the parameters.",true);
+   args.addOptionS("","norm","normalization",0,"Normalization constants for each input file provided as comma separated list of doubles (e.g. 1.0017,1.0,0.9999 ).");
    if(!args.parse(*argc,argv))return 0;
    // }}}
 
@@ -72,7 +73,7 @@ string programDescription =
 
    if(! args.flag("smoothOnly")){
       if(! args.isSet("meanFileName")){
-         error("Main: Please provide variance file name.\n");
+         error("Main: Please provide mean file name.\n");
          return 1;
       }
       trExp.readExpression(args.getS("meanFileName"), MEAN_VARIANCE);
@@ -123,6 +124,12 @@ string programDescription =
       if(! cond.init(C,M,N,"NONE",args.args())){
          error("Main: Failed loading MCMC samples.\n");
          return 0;
+      }
+      if(args.isSet("normalization")){
+         if(! cond.setNorm(args.getTokenizedS2D("normalization"))){
+            error("Main: Appying normalization constants failed.\n");
+            return 1;
+         }
       }
       RTN = cond.getRN();
       if(args.verbose)message("Total replicates: %ld\n",RTN);

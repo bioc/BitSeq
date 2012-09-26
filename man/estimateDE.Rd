@@ -7,7 +7,7 @@ Estimate condition mean expression for both experimental conditions using the ex
 \usage{
 estimateDE( cond1, cond2, outFile, parFile, 
       lambda0=NULL, samples=NULL, confidencePerc=NULL, 
-      verbose=NULL, pretend=FALSE )
+      verbose=NULL, norm=NULL, pretend=FALSE )
 }
 \arguments{
 \item{cond1}{List of files containing the expression samples for contition 1.}
@@ -19,6 +19,7 @@ estimateDE( cond1, cond2, outFile, parFile,
 \item{verbose}{Verbose output.}
 Advanced options:
 \item{lambda0}{Model parameter lambda_0.}
+\item{norm}{Vector of (multiplicative) normalization constants for library size normalization of expression samples. Number of constants has to match the number of expression samples files.} 
 \item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 }
 \details{
@@ -39,7 +40,7 @@ Optionally the function can produce also the samples of condition mean expressio
 \examples{\dontrun{
 cond1Files = c("data-c0b0.rpkm","data-c0b1.rpkm")
 cond2Files = c("data-c1b0.rpkm","data-c1b1.rpkm")
-estimateDE( cond1=cond1Files, cond2=cond2Files, outFile="data.pplr", parFile="data.par" )
+estimateDE( cond1=cond1Files, cond2=cond2Files, outFile="data.pplr", parFile="data.par", norm=c(1.0, 0.999, 1.0017, 0.9998))
 }}
 
 \keyword{differential expression}

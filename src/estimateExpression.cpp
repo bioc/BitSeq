@@ -359,30 +359,31 @@ void MCMC(TagAlignments *alignments,gibbsParameters &gPar,ArgumentParser &args){
    // Write means: {{{
    meansFile.open((args.getS("outFilePrefix")+".thetaMeans").c_str());
    if(meansFile.is_open()){
-      meansFile<<"# T => Mrows Ncols\n# M "<<M-1<<"\n# N "<<chainsN+1<<endl;
-      meansFile<<"# file containing the mean value of theta - realtive abundace of fragments\n"
-                 "# (overall mean and mean from every chain are reported)\n"
+      meansFile<<"# T => Mrows \n# M "<<M-1<<endl;
+      meansFile<<"# file containing the mean value of theta - realtive abundace of fragments and counts\n"
+                 "# (overall mean, overall counts, mean of saved samples, and mean from every chain are reported)\n"
                  "# columns:\n"
-                 "# <transcriptID> <overalMean> <chain1mean> <chain2mean> ....\n";
+                 "# <transcriptID> <meanThetaOverall> <meanReadCountOverall> <meanThetaSaved>";
+      for(j=0;j<chainsN;j++)meansFile<<" <chain"<<j+1<<"mean>";
+      meansFile<<endl;
       meansFile<<scientific;
       meansFile.precision(9);
       double sum,sum2;
       for(i=0;i<M;i++){
-         sum=0;
-         sum2=0;
+         sum=sum2=0;
          for(j=0;j<chainsN;j++){
             sum+=samplers[j]->getAverage(i).FF; 
             sum2+=samplers[j]->getAverage(i).SS; 
-            if(i==0)meansFile<<" "<<samplers[j]->getWithinVariance(0).FF;
          }
          if(i==0){
-            meansFile<<"# thetaAct "<<sum/chainsN<<" ";
+            meansFile<<"#thetaAct:";
          }else{
-            meansFile<< i<<" "<< sum/chainsN <<" ";
+            meansFile<<i;
          }
+         meansFile<<" "<<sum/chainsN<<" "<<(long)floor(sum/chainsN*alignments->getNreads()+0.5)<<" "<<sum2/chainsN;
          for(j=0;j<chainsN;j++)
-            meansFile<<samplers[j]->getAverage(i).FF<<" ";
-         meansFile<<sum2/chainsN<<endl;
+            meansFile<<" "<<samplers[j]->getAverage(i).FF;
+         meansFile<<endl;
       }
       meansFile.close();
    }else{

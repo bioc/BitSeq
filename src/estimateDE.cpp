@@ -67,6 +67,7 @@ string programDescription =
    args.addOptionB("s","samples","samples",0,"Produce samples of condition mean expression apart from PPLR and confidence.");
    args.addOptionD("l","lambda0","lambda0",0,"Parameter lambda_0.",LAMBDA_0);
    args.addOptionD("c","confidencePerc","cf",0,"Percentage for confidence intervals.", 5);
+   args.addOptionS("","norm","normalization",0,"Normalization constants for each input file provided as comma separated list of doubles (e.g. 1.0017,1.0,0.9999 ).");
    if(!args.parse(*argc,argv))return 0;
    //}}}
    long i,C,M,N,m,n,c,r,parN;
@@ -90,6 +91,12 @@ string programDescription =
    if(! cond.init(C,M,N,"NONE",args.args())){
       error("Main: Failed loading conditions.\n");
       return 0;
+   }
+   if(args.isSet("normalization")){
+      if(! cond.setNorm(args.getTokenizedS2D("normalization"))){
+         error("Main: Appying normalization constants failed.\n");
+         return 1;
+      }
    }
    bool logged = cond.logged();
    if( (!logged) && args.verbose){

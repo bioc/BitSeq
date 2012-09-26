@@ -1,6 +1,7 @@
 #include<algorithm>
 #include<fstream>
 #include<ctime>
+#include<sstream>
 
 #include "TranscriptSequence.h"
 #include "common.h"
@@ -12,6 +13,7 @@ TranscriptSequence::TranscriptSequence(){//{{{
    srand(time(NULL));
    M=0;
    cM=0;
+   gotGeneNames=false;
 }//}}}
 TranscriptSequence::TranscriptSequence(string fileName){//{{{
    TranscriptSequence();
@@ -26,12 +28,26 @@ bool TranscriptSequence::readSequence(string fileName){//{{{
    trSeqInfoT newTr;
    newTr.use=0;
    newTr.cache=-1;
+   string trDesc,geneName;
+   long pos;
+   istringstream geneDesc;
+   gotGeneNames = true;
    while(fastaF.good()){
       while((fastaF.peek()!='>')&&(fastaF.good()))
          fastaF.ignore(1000,'\n');
       if(! fastaF.good())break;
       // skip description line:
-      fastaF.ignore(1000,'\n');
+      getline(fastaF, trDesc, '\n');
+      // look for gene name:
+      pos=trDesc.find("gene:");
+      if(pos!=(long)string::npos){
+         geneDesc.clear();
+         geneDesc.str(trDesc.substr(pos+5));
+         geneDesc >> geneName;
+         geneNames.push_back(geneName);
+      }else{
+         gotGeneNames = false;
+      }
       // remember position:
       newTr.seek=fastaF.tellg();
       trs.push_back(newTr);

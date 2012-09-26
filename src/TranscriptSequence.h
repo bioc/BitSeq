@@ -16,6 +16,8 @@ struct trSeqInfoT{
 class TranscriptSequence{
    private:
       long M,cM;
+      bool gotGeneNames;
+      vector<string> geneNames;
       vector<trSeqInfoT> trs;
       vector<string> cache;
       vector<long> cachedTrs;
@@ -30,6 +32,8 @@ class TranscriptSequence{
       long getM();
       const string* getTr(long tr);
       string getSeq(long tr, long start, long l,bool doReverse = false); 
+      bool hasGeneNames(){ return gotGeneNames; }
+      const vector<string>* getGeneNames(){ return &geneNames; }
 };
 
 #endif

@@ -6,7 +6,7 @@
 estimateHyperPar( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL, 
       meanFile=NULL, force=TRUE, exThreshold=NULL, lambda0=NULL, 
       paramsAllFile=NULL, smoothOnly=NULL, lowess_f=NULL, lowess_steps=NULL, verbose=NULL, 
-      veryVerbose=NULL, pretend=FALSE )
+      veryVerbose=NULL, norm=NULL, pretend=FALSE )
 }
 \arguments{
 \item{outFile}{Name of the output file.}
@@ -24,6 +24,7 @@ Advanced options:
 \item{lowess\_f}{Parameter F for lowess smoothing specifying amount of smoothing.}
 \item{lowess\_steps}{Parameter Nsteps for lowess smoothing specifying number of iterations.}
 \item{veryVerbose}{More verbose output.}
+\item{norm}{Vector of (multiplicative) normalization constants for library size normalization of expression samples. Number of constants has to match the number of expression samples files.} 
 \item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 %\item{groupsNumber}{Number of groups of transcript of similar size.}
 %\item{samplesNumber}{Number of samples generated for each group.}

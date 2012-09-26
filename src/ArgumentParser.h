@@ -73,6 +73,7 @@ class ArgumentParser{
       long getL(string name);
       double getD(string name);
       vector<string>& args();
+      vector<double> getTokenizedS2D(string name);
       bool flag(string name);
       bool isSet(string name);
       void usage();
