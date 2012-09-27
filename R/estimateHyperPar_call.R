@@ -11,9 +11,17 @@
 #  args.addOptionL("","lowess-steps","lowess-steps",0,"Parameter Nsteps for lowess smoothing specifying number of iterations.",5);
 #  args.addOptionB("","force","force",0,"Force smoothing",true);
 
-estimateHyperPar <- function( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL, meanFile=NULL, force=TRUE, exThreshold=NULL, lambda0=NULL, paramsAllFile=NULL, smoothOnly=NULL, lowess_f=NULL, lowess_steps=NULL, verbose=NULL, veryVerbose=NULL, norm=NULL, pretend=FALSE ){
+estimateHyperPar <- function( outFile, conditions=NULL, paramsInFile=NULL, meanFile=NULL, force=TRUE, exThreshold=NULL, lambda0=NULL, paramsAllFile=NULL, smoothOnly=NULL, lowess_f=NULL, lowess_steps=NULL, verbose=NULL, veryVerbose=NULL, norm=NULL, pretend=FALSE ){
+   
+   ## unlist norm
+   norm <- unlist(norm);
    if (is.null(paramsInFile)){
-      args <- c('estimateHyperPar',cond1,'C',cond2, '--outFile', outFile)
+      args <- c('estimateHyperPar', unlist(conditions[[1]]));
+      ## parse other conditions
+      for(i in 2:length(conditions)){
+         args <- c(args, 'C', unlist(conditions[[i]]));
+      }
+      args <- c(args , '--outFile', outFile)
    }else{
       if(is.null(smoothOnly) || (!smoothOnly))stop("Please use smoothOnly option if you only want to smooth previously estimated hyperparameters.");
       args <- c('estimateHyperPar', paramsInFile, '--outFile', outFile)
@@ -42,8 +50,6 @@ estimateHyperPar <- function( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL
    if (! force) {
       args <- c(args, '--noforce')
    }
-
-   
    if (!is.null(verbose) && (verbose)) {
       args <- c(args, '--verbose')
    }
@@ -51,7 +57,7 @@ estimateHyperPar <- function( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL
       args <- c(args, '--veryVerbose')
    }
    if (!is.null(norm)) {
-      if(length(cond1)+length(cond2) != length(norm)){
+      if(length(unlist(conditions)) != length(norm)){
          stop("The number of normalization constants has to match the number of sample files.");
       }
       args <- c(args, '--norm', paste(norm, collapse=","));

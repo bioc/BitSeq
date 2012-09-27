@@ -140,7 +140,7 @@ The function again returns \Robject{list} with first item \Rvar{pplr} containing
 The second item \Rvar{fn} contains list of filenames with the names of produced files.
 Using the option\Rvar{samples=TRUE}, the function creates also files containing the condition mean expression samples.
 <<>>=
-de1 <- getDE(cond1Files, cond2Files, 
+de1 <- getDE(list(cond1Files, cond2Files), 
    samples=TRUE)
 print(de1$fn)
 @
@@ -237,13 +237,13 @@ In the differential expression analysis we are comparing samples from two differ
 Also in order to estimate biological variance of transcript expression, we have to use data from at least one extra biological replicates. 
 We first specify the files containing expression samples from the Stage 1, using file \FILE{data-c0b0.rpkm} computed in previous example and three other files provided with the package:
 <<>>=
-cond1Files = c("data-c0b0.rpkm","data-c0b1.rpkm")
-cond2Files = c("data-c1b1.rpkm","data-c1b1.rpkm")
+allConditions = list(c("data-c0b0.rpkm","data-c0b1.rpkm"),
+                     c("data-c1b1.rpkm","data-c1b1.rpkm"))
 @
 The estimation of expression specific hyperparameters for the DE model requires pre computing joint mean expression over all experiments using the \Rfunction{getMeanVariance} function. 
 As the DE model uses logged expression samples, we have to compute the mean and variance of logged expression samples:
 <<>>=
-getMeanVariance(c(cond1Files,cond2Files), 
+getMeanVariance(allConditions, 
    outFile = "data.means",
    log = TRUE )
 @
@@ -254,8 +254,7 @@ The hyperparameters for the model are estimated from the entire data using Metro
 The values are smoothed afterwards using the non-parametric Lowess smoothing algorithm:
 <<>>=
 estimateHyperPar( outFile = "data.par",
-   cond1 = cond1Files, 
-   cond2 = cond2Files,
+   conditions = allConditions,
    meanFile = "data.means",
    verbose = TRUE )
 @
@@ -266,14 +265,23 @@ The model for Differential Expression analysis uses the posterior samples from e
 Function \Rfunction{estimateDE} computes the samples and uses them to compute the Probability of Positive Log Ratio, which is the probability of a transcript being up-regulated in the first condition as well as inverse probability of transcript being down-regulated in the first condition.
 The PPLR, mean $\log_2$ fold change with confidence intervals and mean condition mean expression are saved into the final output file with extension \FILE{.pplr} and prefix specified by the option \Rvar{outFile}:
 <<>>=
-estimateDE(cond1Files, cond2Files,
+estimateDE(allConditions,
    outFile = "data",
    parFile = "data.par" )
+##
+## pretend run with three conditions and normalization constants
+##
+cond3Files = c("data-c2b0.rpkm","data-c2b1.rpkm", "data-c2b2.rpkm")
+estimateDE(list( allConditions[[1]], allConditions[[2]], cond3Files), 
+           outFile="mydata", 
+           parFile="mydata.par", 
+           norm=c(1.0, 0.999, 1.0017, 0.9998, 1.0, 0.99, 0.97), 
+           pretend=TRUE)
 @
 
 In case one is interested in the condition mean expression samples as well, they can be obtained by using the \Rvar{samples} flag:
 <<>>=
-estimateDE(cond1Files, cond2Files,
+estimateDE(allConditions,
    outFile = "data",
    parFile = "data.par",
    samples = TRUE )

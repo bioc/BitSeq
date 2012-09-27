@@ -30,9 +30,8 @@ res2 <- getExpression("data-c0b1.sam","ensSelect1.fasta")
 res3 <- getExpression("data-c1b0.sam","ensSelect1.fasta")
 res4 <- getExpression("data-c1b1.sam","ensSelect1.fasta")
 
-deRes <- getDE( 
-   c(res1$fn, res2$fn),
-   c(res3$fn, res4$fn))
+deRes <- getDE( list(c(res1$fn, res2$fn), 
+                     c(res3$fn, res4$fn)) )
 ## top 10 differentially expressed
 head(deRes$pplr[ order(abs(0.5-deRes$pplr$pplr), decreasing=TRUE ), ], 10)
 
@@ -56,17 +55,18 @@ estimateExpression( "data-c0b0.prob",
 
 cond1Files = c("data-c0b0.rpkm","data-c0b1.rpkm")
 cond2Files = c("data-c1b1.rpkm","data-c1b1.rpkm")
+allConditions = list(cond1Files, cond2Files)
 
-getMeanVariance(c(cond1Files,cond2Files), 
+getMeanVariance( allConditions, 
    outFile = "data.means",
    log = TRUE )
 
-estimateHyperPar(cond1Files, cond2Files,
+estimateHyperPar( allConditions,
    outFile = "data.par",
    meanFile = "data.means",
    verbose = TRUE )
 
-estimateDE(cond1Files, cond2Files,
+estimateDE( allConditions,
    outFile = "data",
    parFile = "data.par" )
 

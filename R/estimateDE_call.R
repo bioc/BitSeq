@@ -4,9 +4,15 @@
 #  args.addOptionD("l","lambda0","lambda0",0,"Parameter lambda_0.",LAMBDA_0);
 #  args.addOptionD("c","confidencePerc","cf",0,"Percentage for confidence intervals.", 5);
 
-estimateDE <- function( cond1, cond2, outFile, parFile, lambda0=NULL, samples=NULL, confidencePerc=NULL, verbose=NULL, norm=NULL, pretend=FALSE ){
-   
-   args <- c('estimateDE',cond1,'C',cond2, '--outPrefix', outFile , '--parameters', parFile)
+estimateDE <- function( conditions, outFile, parFile, lambda0=NULL, samples=NULL, confidencePerc=NULL, verbose=NULL, norm=NULL, pretend=FALSE ){
+   ## unlist norm
+   norm <- unlist(norm);
+   args <- c('estimateDE', unlist(conditions[[1]]));
+   ## parse other conditions
+   for(i in 2:length(conditions)){
+      args <- c(args, 'C', unlist(conditions[[i]]));
+   }
+   args <- c(args, '--outPrefix', outFile , '--parameters', parFile);
    if (!is.null(lambda0)) {
       args <- c(args, '--lambda0', lambda0)
    }
@@ -21,7 +27,7 @@ estimateDE <- function( cond1, cond2, outFile, parFile, lambda0=NULL, samples=NU
       args <- c(args, '--verbose')
    }
    if (!is.null(norm)) {
-      if(length(cond1)+length(cond2) != length(norm)){
+      if(length(unlist(conditions)) != length(norm)){
          stop("The number of normalization constants has to match the number of sample files.");
       }
       args <- c(args, '--norm', paste(norm, collapse=","));

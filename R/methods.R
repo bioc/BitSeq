@@ -1,13 +1,13 @@
-## compute PPLR for two conditions
-getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, norm=NULL, pretend=FALSE ){
+## compute PPLR for two or more conditions
+getDE <- function( conditions, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, norm=NULL, pretend=FALSE ){
    ## pretend needs prefix
    if(pretend && is.null(outPrefix)){
       message("In case of no outPrefix provided this function uses R temporary directories which are only valid during the current session.")
       stop("Please provide outPrefix when using the pretend option.")
    }
    ## check file extensions
-   ext <- .getExt(cond1[1]);
-   for(it in c(cond1,cond2)){
+   ext <- .getExt(conditions[[1]][1]);
+   for(it in unlist(conditions)){
       if(!file.exists(it))stop(paste("File",it,"does not exist"));
       if(ext!=.getExt(it))stop(paste("File",it,"has different extension from first file."));
    }
@@ -15,7 +15,7 @@ getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL,
       outPrefix <- tempfile("dataBS-DE-");
    }
    if(is.null(trInfoFile)){
-      trInfoFile=.changeExt(cond1[1]);
+      trInfoFile=.changeExt(conditions[[1]][1]);
       if(file.exists(trInfoFile)){
          message(paste("## No trInfoFile provided, will try using",trInfoFile,"for result's row names."));
       }else{
@@ -25,17 +25,18 @@ getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL,
    meanFile <- paste(outPrefix, "Lmean", sep=".");
    parFile <- paste(outPrefix, "par", sep=".");
    message("Computing overall mean.");
-   getMeanVariance(c(cond1,cond2),meanFile,log=TRUE,norm=norm,pretend=pretend);
+   getMeanVariance(conditions,meanFile,log=TRUE,norm=norm,pretend=pretend);
    message("Estimating hyperparameters.");
-   estimateHyperPar(parFile,cond1,cond2,meanFile=meanFile,norm=norm,pretend=pretend);
+   estimateHyperPar(parFile,conditions,meanFile=meanFile,norm=norm,pretend=pretend);
    message("Estimating condition mean expression and PPLR.");
-   estimateDE(cond1,cond2,outPrefix,parFile,samples=samples,norm=norm,pretend=pretend);
+   estimateDE(conditions,outPrefix,parFile,samples=samples,norm=norm,pretend=pretend);
    if(samples){
-      c1Res <- paste(outPrefix,"-C0.est",sep="");
-      c2Res <- paste(outPrefix,"-C1.est",sep="");
+      samplesFiles = c();
+      for(i in 1:length(conditions)){
+         samplesFiles = c(samplesFiles, paste(outPrefix,"-C",(i-1),".est",sep=""));
+      }
    }else{
-      c1Res<-NULL;
-      c2Res<-NULL;
+      samplesFiles = NULL;
    }
    pplrFN <- paste(outPrefix, "pplr", sep=".");
    if(pretend){
@@ -44,7 +45,7 @@ getDE <- function( cond1, cond2, outPrefix=NULL, samples=FALSE, trInfoFile=NULL,
       data <- loadSamples( pplrFN, trInfoFile);
       colnames(data)<-c("pplr", "log2FC", "ConfidenceLow", "ConfidenceHigh", "meanC1", "meanC2");
    }
-   return(list(pplr=data,fn=list(pplr=pplrFN,C1samples=c1Res,C2samples=c2Res)));
+   return(list(pplr=data,fn=list(pplr=pplrFN,samplesFiles=samplesFiles)));
 }
 
 ## compute transcript expression

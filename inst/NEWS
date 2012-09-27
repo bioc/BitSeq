@@ -1,17 +1,30 @@
 Package: BitSeq
 ===============
 
-Version: 1.2.0 (25.9.2012)
+Version: 1.2.0 (27.9.2012)
+- IMPORTANT change: the way samples-files are passed to getDE, estimateHyperPar, estimateDE changed.
+  -> instead of providing 2 vectors of filenames for each condition, the files are passed as a list
+     of vectors, each vector containing filenames for one condition 
+  (allowing use of more than 2 conditions)
+
 - new internal structure (not visible to user)
-- estimateExpression has a new convergence criterion which should result in producing fewer samples (faster)
+
+- estimateExpression has a new convergence criterion which should result in producing fewer samples
+  (faster and dropping the use of MCMC_scaleReduction and MCMC_samplesNmax flags)
+  -> estimateExpressionLegacy uses the original convergence criterion
+
 - library normalization option for getDE, estimateDE, estimateHyperPar, getMeanVariance
-  (in form of providing the normalization constants, for getting the constants please use edgeR or similar)
+  (in form of providing the normalization constants, for getting the constants please use edgeR or 
+   similar)
 
 Version: 1.0.1 (30.4.2012)
 Version: 1.1.1 (30.4.2012)
 
-- fixed bug in estimateExpression (reading file with probabilities occasionally failed when transcript information file was not specified) 
+- fixed bug in estimateExpression (reading file with probabilities occasionally failed when 
+  transcript information file was not specified) 
+
 - improved manual, replaced overflowing lines
+
 - added option "pretend" to produce C++ calls 
 
 

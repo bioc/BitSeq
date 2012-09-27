@@ -3,15 +3,14 @@
 \title{Estimate hyperparameters for DE model using expression samples and joint mean expression}
 \description{Estimate hyperparameters for the Differential Expression model using expression samples and produced smoothed values of the hyperparameters depending on joint mean expression.}
 \usage{
-estimateHyperPar( outFile, cond1=NULL, cond2=NULL, paramsInFile=NULL, 
+estimateHyperPar( outFile, conditions=NULL, paramsInFile=NULL, 
       meanFile=NULL, force=TRUE, exThreshold=NULL, lambda0=NULL, 
       paramsAllFile=NULL, smoothOnly=NULL, lowess_f=NULL, lowess_steps=NULL, verbose=NULL, 
       veryVerbose=NULL, norm=NULL, pretend=FALSE )
 }
 \arguments{
 \item{outFile}{Name of the output file.}
-\item{cond1}{List of files containing the expression samples for condition 1.}
-\item{cond2}{List of files containing the expression samples for condition 2.}
+\item{conditions}{\code{List} of vectors, each vector containing names of files containing the expression samples from a replicate (Can be both technical and biological replicates. However, in order to get good results biological replicates for each condition are essential).}
 \item{paramsInFile}{File produced by previous run of the function using \code{paramsAllFile} flag.}
 \item{meanFile}{Name of the file containing joint mean and variance.}
 \item{exThreshold}{Threshold of lowest expression for which the estimation is done.}
@@ -40,10 +39,10 @@ Advanced options:
 \examples{\dontrun{
 cond1Files = c("data-c0b0.rpkm","data-c0b1.rpkm")
 cond2Files = c("data-c1b0.rpkm","data-c1b1.rpkm")
-estimateHyperPar( cond1=cond1Files, cond2=cond2Files, outFile="data.par", 
+estimateHyperPar( conditions=list(cond1Files, cond2Files), outFile="data.par", 
       meanFile="data.means", verbose=TRUE)
 
-estimateHyperPar( cond1=cond1Files, cond2=cond2Files, outFile="data.par", 
+estimateHyperPar( conditions=list(cond1Files, cond2Files), outFile="data.par", 
       meanFile="data.means", paramsFile="data.ALLpar", force=FALSE)
 estimateHyperPar( outFile="data.par", paramsInFile="data.ALLpar", smoothOnly=TRUE )
 }}

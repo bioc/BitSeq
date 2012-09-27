@@ -3,7 +3,9 @@
 #   args.addOptionS("t","type","type",0,"Type of variance, possible values: [sample,sqDif] for sample variance or squared difference.","sample");
 
 getMeanVariance <- function(sampleFiles, outFile, log=NULL, type=NULL, verbose=NULL, norm=NULL, pretend=FALSE){
-
+   ## we want sampleFiles and norm to be a vector
+   sampleFiles <- unlist(sampleFiles);
+   norm <- unlist(norm);
    args <- c('getVariance', sampleFiles, '--outFile', outFile);
    if ((!is.null(log)) && (log)) {
       args <- c(args, '--log')
