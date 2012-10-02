@@ -35,6 +35,36 @@ extern "C"{
 #define bam1_seqi(s, i) ((s)[(i)/2] >> 4*(1-(i)%2) & 0xf)
 #define bam1_aux(b) ((b)->data + (b)->core.n_cigar*4 + (b)->core.l_qname + (b)->core.l_qseq + ((b)->core.l_qseq + 1)/2)
 
+/* CIGAR DEFINEs */
+/**
+ * Describing how CIGAR operation/length is packed in a 32-bit integer.
+ */
+#define BAM_CIGAR_SHIFT 4
+#define BAM_CIGAR_MASK  ((1 << BAM_CIGAR_SHIFT) - 1)
+/*
+  CIGAR operations.
+ */
+/*! @abstract CIGAR: M = match or mismatch*/
+#define BAM_CMATCH      0
+/*! @abstract CIGAR: I = insertion to the reference */
+#define BAM_CINS        1
+/*! @abstract CIGAR: D = deletion from the reference */
+#define BAM_CDEL        2
+/*! @abstract CIGAR: N = skip on the reference (e.g. spliced alignment) */
+#define BAM_CREF_SKIP   3
+/*! @abstract CIGAR: S = clip on the read with clipped sequence
+  present in qseq */
+#define BAM_CSOFT_CLIP  4
+/*! @abstract CIGAR: H = clip on the read with clipped sequence trimmed off */
+#define BAM_CHARD_CLIP  5
+/*! @abstract CIGAR: P = padding */
+#define BAM_CPAD        6
+/*! @abstract CIGAR: equals = match */
+#define BAM_CEQUAL        7
+/*! @abstract CIGAR: X = mismatch */
+#define BAM_CDIFF        8
+/* END CIGAR DEFINES */
+
 /* moved to readDistribution.h
 #define bam_init1() ((bam1_t*)calloc(1, sizeof(bam1_t)))
 #define bam_destroy1(b) do { \
