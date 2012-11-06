@@ -42,6 +42,7 @@ class TagAlignment{//{{{
       void setProb(double p){prob=p;}
 }; //}}}
 
+// Read is not marked as not mapped, and is either not marked as paired, or it is marked as proper pair. 
 #define FRAG_IS_ALIGNED(x) \
    ( !(x->first->core.flag & BAM_FUNMAP) && \
      ( !(x->first->core.flag & BAM_FPAIRED) || \
@@ -101,7 +102,7 @@ string programDescription =
    // Set options {{{
    ArgumentParser args(programDescription,"[alignment file]",1);
    args.addOptionS("o","outFile","outFileName",1,"Name of the output file.");
-   args.addOptionS("f","format","format",0,"Input format: either SAM, BAM or bowtie's MAP[not implemented yet].","SAM");
+   args.addOptionS("f","format","format",0,"Input format: either SAM, BAM.","SAM");
    args.addOptionS("t","trInfoFile","trInfoFileName",0,"If transcript(reference sequence) information is contained within SAM file, program will write this information into <trInfoFile>, otherwise it will look for this information in <trInfoFile>.");
    args.addOptionS("s","trSeqFile","trSeqFileName",1,"Transcript sequence in FASTA format --- for non-uniform read distribution estimation.");
    args.addOptionS("e","expressionFile","expFileName",0,"Transcript relative expression estimates --- for better non-uniform read distribution estimation.");
@@ -172,7 +173,7 @@ string programDescription =
    trSeq = new TranscriptSequence();
    trSeq->readSequence(args.getS("trSeqFileName")); 
    if(trSeq->getM() != M){
-      error("Main: Number of transcripts in the alignment file and the sequence file are different: %ld vs %ld\n",M,trSeq->getM());
+      error("Main: Number of transcripts in the alignment(%s) file and the sequence file are different: %ld vs %ld\n",args.getS("format").c_str(),M,trSeq->getM());
       return 1;
    }
    for(i=0;i<M;i++){
@@ -186,7 +187,7 @@ string programDescription =
          if(args.verbose)message("Loading transcript initial expression data.\n");
          trExp = new TranscriptExpression(args.getS("expFileName"));
          if(trExp->getM() != M){
-            error("Main: number of transcripts don't match: %ld vs %ld\n",M,trExp->getM());
+            error("Main: Number of transcripts in the alignment(%s) file and the expression are different: %ld vs %ld\n",args.getS("format").c_str(),M,trExp->getM());
             return 1;
          }
       }
@@ -220,21 +221,20 @@ string programDescription =
    }
    // fill in "next" fragment:
    readNextFragment(samData, curF, nextF);
-   long alN = 0;
-   // start counting (and possibly estimating:
+   long alN = 0, alGoodN = 0;
+   // start counting (and possibly estimating):
    while(readNextFragment(samData,curF,nextF)){
-//      if(curF->paired)message("P %s %s\n",bam1_qname(curF->first),bam1_qname(curF->second));
-      if(strcmp(bam1_qname(curF->first), bam1_qname(nextF->first))==0){
-         if( FRAG_IS_ALIGNED(curF) ) alN++;
-      }else{
+      alN ++;
+      if( FRAG_IS_ALIGNED(curF) ) alGoodN++;
+      // Next read is different.
+      if(strcmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0){
          Ntotal++;
-         // First alignment for this read and proper read:
-         if( FRAG_IS_ALIGNED(curF) ){
-            Nmap++;
-            if( (alN == 0) && analyzeReads)
+         if( alGoodN > 0 ) Nmap ++;
+         // If it's good uniquely aligned read, add it to the observation.
+         if(( alGoodN == 1) && ( alN == 1 )  && analyzeReads)
                readD.observed(curF);
-         }
          alN = 0;
+         alGoodN = 0;
       }
    }
    if(args.verbose)message("Ntotal: %ld  Nmap: %ld\n",Ntotal,Nmap);
