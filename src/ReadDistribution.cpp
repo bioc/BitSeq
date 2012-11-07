@@ -12,6 +12,15 @@ void inline progressLogRD(long cur,long outOf) {//{{{
 
 #define DEBUG(x) 
 
+inline char int2base(int B){//{{{
+   switch(B){
+      case 0: return 'a';
+      case 1: return 'c';
+      case 2: return 'g';
+      case 3: return 't';
+      default: return 'n';
+   }
+}//}}}
 inline long base2int(char B){//{{{
    switch(B){
       case 'A': case 'a': return 0; 
@@ -39,7 +48,8 @@ inline void mapAdd(map<long,double > &m, long key, double val){//{{{
 
 ReadDistribution::ReadDistribution(long m){ //{{{
    M=m;
-   uniform = lengthSet = gotExpression = warnPos = normalized = validLength = false;
+   uniform = lengthSet = gotExpression = normalized = validLength = false;
+   warnPos = warnTIDmismatch = true;
    lMu=100;
    lSigma=10;
    verbose = true;
@@ -110,22 +120,28 @@ void ReadDistribution::observed(fragmentP frag){ //{{{
    if((tid == -1)||((frag->paired)&&(tid!=frag->second->core.tid))) return;
    // Set inverse expression
    double Iexp = (gotExpression)? 1.0/trExp->exp(tid) : 1.0;
+   // Calculate reads' true end position:
+   long frag_first_endPos, frag_second_endPos=0;
+   frag_first_endPos = bam_calend(&frag->first->core, bam1_cigar(frag->first));
+   if(frag->paired){
+      frag_second_endPos = bam_calend(&frag->second->core, bam1_cigar(frag->second));
+   }
    // update lengths: //{{{
    DEBUG(message("   length update\n");)
    double len,logLen;
    if(frag->paired){
       fragSeen ++;
       if(frag->second->core.pos>frag->first->core.pos)
-         len = frag->second->core.pos - frag->first->core.pos + frag->second->core.l_qseq;
+         len = frag_second_endPos  - frag->first->core.pos;
       else{
-         len = frag->first->core.pos - frag->second->core.pos + frag->first->core.l_qseq;
+         len = frag_first_endPos - frag->second->core.pos;
       }
       if(minFragLen>(long)len)minFragLen = (long) len;
       logLen = log(len);
       logLengthSum += logLen;
       logLengthSqSum += logLen*logLen;
    }else{
-      len = frag->first->core.l_qseq;
+      len = frag_first_endPos - frag->first->core.pos;
       singleReadLength = (long)len;
       if(singleReadLength<minFragLen)minFragLen = singleReadLength;
    } //}}}
@@ -152,10 +168,10 @@ void ReadDistribution::observed(fragmentP frag){ //{{{
    if(! frag->paired){
       if(frag->first->core.flag & BAM_FREVERSE){
          // Antisense strand of transcript is 5'end of fragment
-         updatePosBias(frag->first->core.pos + frag->first->core.l_qseq, readM_5, tid, Iexp);
+         updatePosBias(frag_first_endPos, readM_5, tid, Iexp);
          // readM_5 and uniformM_5 are always "second mates" 
          // this is assumed also in getP(...);
-         updateSeqBias(frag->first->core.pos + frag->first->core.l_qseq, readM_5, tid, Iexp);
+         updateSeqBias(frag_first_endPos, readM_5, tid, Iexp);
          // update sum of expression of  fragments of given length
          mapAdd(trFragSeen5[tid], (long)len, Iexp);
       }else{
@@ -169,8 +185,8 @@ void ReadDistribution::observed(fragmentP frag){ //{{{
       updateSeqBias( frag->first->core.pos, readM_3, tid, Iexp);
       mapAdd(trFragSeen3[tid], (long)len, Iexp);
          
-      updatePosBias( frag->second->core.pos + frag->second->core.l_qseq, readM_5, tid, Iexp);
-      updateSeqBias( frag->second->core.pos + frag->second->core.l_qseq, readM_5, tid, Iexp);
+      updatePosBias( frag_second_endPos, readM_5, tid, Iexp);
+      updateSeqBias( frag_second_endPos, readM_5, tid, Iexp);
       mapAdd(trFragSeen5[tid], (long)len, Iexp);
    }
 }//}}}
@@ -315,21 +331,72 @@ pair<double,double> ReadDistribution::getSequenceProb(bam1_t *samA){//{{{
    double prob=1,lowProb=1,probMis;
    bam1_core_t *samC = &samA->core;
    uint8_t *qualP=bam1_qual(samA);
-   long i,misses,len=samC->l_qseq;
-   string seq = trSeq->getSeq(samC->tid, samC->pos, len, false);
+   long i,j,misses,len=samC->l_qseq;
+   long deletionN=0;
+   // Count number of deletions-insertions
+   for(i=0;i<samC->n_cigar;i++){
+      switch(bam1_cigar(samA)[i]&BAM_CIGAR_MASK){
+         case BAM_CDEL:
+            deletionN += (long)(bam1_cigar(samA)[i]>>BAM_CIGAR_SHIFT);
+            break;
+         case BAM_CINS:
+            deletionN -= (long)(bam1_cigar(samA)[i]>>BAM_CIGAR_SHIFT);
+            break;
+      }
+   }
+   string seq = trSeq->getSeq(samC->tid, samC->pos, len+deletionN, false);
    misses=lowProbMismatches;
-   /*message("%s %ld %ld %ld\n",bam1_qname(samA),samC->tid,samC->pos,len);
-   message("%s\n",(seq).c_str());
-   for(i=0;i<len;i++){message("%ld",bamBase2int(bam1_seqi(bam1_seq(samA),i)));}message("\n\n");*/
-   for(i=0;i<len;i++){
-      if((base2int(seq[i]) == -1)||(base2int(seq[i]) != bamBase2int(bam1_seqi(bam1_seq(samA),i))))misses--;
+   long cigarOp,cigarI,cigarOpCount;
+   cigarOp=cigarI=cigarOpCount=0;
+   // i - iterates within reference sequence, j - iterates within read
+   i=j=0;
+   while((i<len+deletionN) && (j<len)){
+      if(cigarOpCount == 0){
+         if(cigarI >= samC->n_cigar) break;
+         cigarOp = bam1_cigar(samA)[cigarI]&BAM_CIGAR_MASK;
+         cigarOpCount = (long)(bam1_cigar(samA)[cigarI]>>BAM_CIGAR_SHIFT);
+         cigarI++;
+      }
+      cigarOpCount --;
+      switch(cigarOp){
+         case BAM_CDEL:
+            i++; break;
+         case BAM_CINS:
+            j++; break;
+         case BAM_CMATCH:
+         case BAM_CEQUAL:
+         case BAM_CDIFF:
+            if((base2int(seq[i]) == -1)||
+               (base2int(seq[i]) != bamBase2int(bam1_seqi(bam1_seq(samA),j))))misses--;
+            i++;
+            j++;
+      }
    }
    if(misses<=0)misses=1;
    // start from the end so the "mismatched" bases for lowProb are at the end
-   for(i=len-1;i>=0;i--){
-      probMis = pow((double)10.0,((double) qualP[i])/-10.0 );
+   i=len+deletionN-1;
+   j=len-1;
+   cigarI = samC->n_cigar-1;
+   while((i>=0) && (j>=0)){
+      if(cigarOpCount == 0){
+         if(cigarI < 0) break;
+         cigarOp = bam1_cigar(samA)[cigarI]&BAM_CIGAR_MASK;
+         cigarOpCount = (long)(bam1_cigar(samA)[cigarI]>>BAM_CIGAR_SHIFT);
+         cigarI--;
+      }
+      cigarOpCount --;
+      switch(cigarOp){
+         case BAM_CDEL:
+            i--; continue;
+         case BAM_CINS:
+            j--; continue;
+         /*case BAM_CMATCH:
+         case BAM_CEQUAL:
+         case BAM_CDIFF:*/
+      }
+      probMis = pow((double)10.0,((double) qualP[j])/-10.0 );
          
-      if((base2int(seq[i]) == -1)||(base2int(seq[i]) != bamBase2int(bam1_seqi(bam1_seq(samA),i)))){
+      if((base2int(seq[i]) == -1)||(base2int(seq[i]) != bamBase2int(bam1_seqi(bam1_seq(samA),j)))){
          prob *= probMis;
          lowProb *= probMis;
       }else{
@@ -341,8 +408,9 @@ pair<double,double> ReadDistribution::getSequenceProb(bam1_t *samA){//{{{
             lowProb *= 1.0 - probMis;
          }
       }
+      i--;
+      j--;
    }
-   //message("%lf %lf\n",prob,lowProb);
    return pair<double, double>(prob,lowProb);
 }//}}}
 void ReadDistribution::getP(fragmentP frag,double &prob,double &probNoise){ //{{{
@@ -354,21 +422,33 @@ void ReadDistribution::getP(fragmentP frag,double &prob,double &probNoise){ //{{
    pSeq1 = getSequenceProb(frag->first);
    pSeq2 = getSequenceProb(frag->second);
    long tid = frag->first->core.tid;
-   if((tid==-1)||((frag->paired)&&(frag->second->core.tid != tid))) return;
+   if((tid==-1)||((frag->paired)&&(frag->second->core.tid != tid))){
+      if(warnTIDmismatch){
+         warning("ReadDistribution: Read pair fragments are aligned to different transcripts.\n");
+         warnTIDmismatch=false;
+      }
+      return;
+   }
+   // Calculate reads' true end position:
+   long frag_first_endPos, frag_second_endPos=0;
+   frag_first_endPos = bam_calend(&frag->first->core, bam1_cigar(frag->first));
+   if(frag->paired){
+      frag_second_endPos = bam_calend(&frag->second->core, bam1_cigar(frag->second));
+   }
    double trLen = trInf->L(tid),len;
    // }}}
    if(frag->paired){
    // Get probability of length {{{
       if(frag->second->core.pos>frag->first->core.pos)
-         len = frag->second->core.pos - frag->first->core.pos + frag->second->core.l_qseq;
+         len = frag_second_endPos - frag->first->core.pos;
       else{
-         len = frag->first->core.pos - frag->second->core.pos + frag->first->core.l_qseq;
+         len = frag_first_endPos - frag->second->core.pos;
       }
       // compute length probability and normalize by probability of all possible lengths (cdf):
       if(validLength) P *= getLengthP(len) / getLengthNorm(trLen);
       // }}}
    }else{
-      len = frag->first->core.l_qseq;
+      len = frag_first_endPos - frag->first->core.pos;
    }
    if(uniform){
       // Get probability of position for uniform distribution
@@ -391,8 +471,8 @@ void ReadDistribution::getP(fragmentP frag,double &prob,double &probNoise){ //{{
       }
       if(!frag->paired){
          if(frag->first->core.flag & BAM_FREVERSE){
-            P *= getPosBias(frag->first->core.pos + frag->first->core.l_qseq, mate_5, tid) *
-               getSeqBias(frag->first->core.pos + frag->first->core.l_qseq, mate_5, tid ) /
+            P *= getPosBias(frag_first_endPos, mate_5, tid) *
+               getSeqBias(frag_first_endPos, mate_5, tid ) /
                getWeightNorm( (long) len, mate_5, tid);
          }else{
             P *= getPosBias(frag->first->core.pos , mate_3, tid) *
@@ -406,9 +486,9 @@ void ReadDistribution::getP(fragmentP frag,double &prob,double &probNoise){ //{{
          P *= 1.0/getWeightNorm( (long) len, FullPair, tid);
 //   #pragma omp section
 //   {
-         P *= getPosBias(frag->second->core.pos + frag->second->core.l_qseq, mate_5, tid)
+         P *= getPosBias(frag_second_endPos, mate_5, tid)
           * getPosBias(frag->first->core.pos , mate_3, tid)
-          * getSeqBias(frag->second->core.pos + frag->second->core.l_qseq, mate_5, tid )
+          * getSeqBias(frag_second_endPos, mate_5, tid )
           * getSeqBias(frag->first->core.pos , mate_3, tid ); 
 //   }
 //}
@@ -433,7 +513,7 @@ void ReadDistribution::updatePosBias(long pos, biasT bias, long tid, double Iexp
    posProb[bias][ group ][ rel ] += Iexp;
 }//}}}
 void ReadDistribution::updateSeqBias(long pos, biasT bias, long tid, double Iexp){ //{{{
-   if(Iexp==0)return;
+   if(Iexp<=0)return;
    if(bias>3)return; //this should not happen
    long start ;
    string seq;
@@ -715,55 +795,3 @@ double VlmmNode::getP(char b, char bp, char bpp) {//{{{
    }
 }//}}}
 
-/*
-pair<double,double> ReadDistribution::getSequenceProb(bam1_t *samA){//{{{
-   if(! samA) return pair<double, double>(1,1);
-   //return pair<double, double>(1,0.00000001);
-   double prob=1,lowProb=1;
-   bam1_core_t *samC = &samA->core;
-   uint8_t *qualP=bam1_qual(samA);
-   long i,j,bi,biMove,opN,misses;
-   if(! samC->flag&BAM_FREVERSE){
-      bi=0;
-      biMove=1;
-   }else{
-      bi=samC->l_qseq-1;
-      biMove=-1;
-   }
-   misses=LOW_PROB_MISSES;
-   for(i=0;i<samC->n_cigar;i++){
-         switch(bam1_cigar(samA)[i]&BAM_CIGAR_MASK){
-            case 0:
-            case 7:
-               continue;
-            default:
-               misses--;
-         }
-   }
-   if(misses<=0)misses=1;
-   for(i=0;i<samC->n_cigar;i++){
-      opN = bam1_cigar(samA)[i]>>BAM_CIGAR_SHIFT; // get number of operation[i]
-      // "do" operation[i] opN times
-      for(j=0;j<opN;j++){
-         switch(bam1_cigar(samA)[i]&BAM_CIGAR_MASK){
-            case 0:
-            case 7: //M,=
-               prob *= 1 - pow((double)10.0,((double) qualP[bi])/-10.0 );
-               if(misses>0){
-                  lowProb *= pow((double)10.0,((double) qualP[bi])/-10.0 );
-                  misses--;
-               }else{
-                  lowProb *= 1 - pow((double)10.0,((double) qualP[bi])/-10.0 );
-               }
-               break;
-            case 1: case 2: case 3: case 4: case 5: case 6: case 8: 
-            //I,D,N,S,H,P,X
-               prob *= pow((double)10.0,((double) qualP[bi])/-10.0 );
-               lowProb *= pow((double)10.0,((double) qualP[bi])/-10.0 );
-               break;
-         }
-         bi+=biMove;
-      }
-   }
-   return pair<double, double>(prob,lowProb);
-}//}}} */

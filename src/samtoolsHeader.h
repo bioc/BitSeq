@@ -68,35 +68,36 @@ extern "C"{
 /* moved to readDistribution.h
 #define bam_init1() ((bam1_t*)calloc(1, sizeof(bam1_t)))
 #define bam_destroy1(b) do { \
-   if (b) { free((b)->data); free(b); }	\
+   if (b) { free((b)->data); free(b); }   \
 } while (0)
 */
 
 
+// From bam.h:
 extern "C"{
 
 typedef struct {
-	int32_t n_targets;
-	char **target_name;
-	uint32_t *target_len;
-	void *dict, *hash, *rg2lib;
-	size_t l_text, n_text;
-	char *text;
+   int32_t n_targets;
+   char **target_name;
+   uint32_t *target_len;
+   void *dict, *hash, *rg2lib;
+   size_t l_text, n_text;
+   char *text;
 } bam_header_t;
 typedef struct {
-	int32_t tid;
-	int32_t pos;
-	uint32_t bin:16, qual:8, l_qname:8;
-	uint32_t flag:16, n_cigar:16;
-	int32_t l_qseq;
-	int32_t mtid;
-	int32_t mpos;
-	int32_t isize;
+   int32_t tid;
+   int32_t pos;
+   uint32_t bin:16, qual:8, l_qname:8;
+   uint32_t flag:16, n_cigar:16;
+   int32_t l_qseq;
+   int32_t mtid;
+   int32_t mpos;
+   int32_t isize;
 } bam1_core_t;
 typedef struct {
-	bam1_core_t core;
-	int l_aux, data_len, m_data;
-	uint8_t *data;
+   bam1_core_t core;
+   int l_aux, data_len, m_data;
+   uint8_t *data;
 } bam1_t;
 
 
@@ -104,20 +105,21 @@ typedef struct {
 typedef void *tamFile;
 typedef void *bamFile;
 
-	int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b);
+   int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b);
+   uint32_t bam_calend(const bam1_core_t *c, const uint32_t *cigar);
 }
 
-
+// From sam.h:
 extern "C"{
 
 typedef struct {
-	int type;
-	union {
-		tamFile tamr;
-		bamFile bam;
-		FILE *tamw;
-	} x;
-	bam_header_t *header;
+   int type;
+   union {
+      tamFile tamr;
+      bamFile bam;
+      FILE *tamw;
+   } x;
+   bam_header_t *header;
 } samfile_t;
 
 

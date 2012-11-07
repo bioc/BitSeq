@@ -87,11 +87,11 @@ class ReadDistribution{
       double lMu,lSigma,logLengthSum,logLengthSqSum;
       long lowProbMismatches;
       bool verbose,uniform,lengthSet,gotExpression,normalized;
-      bool warnPos, validLength;
+      bool warnPos, warnTIDmismatch, validLength;
       TranscriptInfo* trInf;
       TranscriptSequence* trSeq;
       TranscriptExpression* trExp;
-      // for each transcript, remember seen fragments:
+      // for each transcript, remember seen fragments in map: length->(sum of probs)
       vector<map<long,double> > trFragSeen5,trFragSeen3;
       // cache for already computed weight norms for single reads 4',3', Pair x Transcript x Length
       vector<vector<map<long, double> > > weightNorms;

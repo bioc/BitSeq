@@ -1,5 +1,4 @@
 #include<fstream>
-#include<map>
 
 #include "common.h"
 #include"TranscriptInfo.h"
@@ -164,3 +163,33 @@ vector<double> *TranscriptInfo::getShiftedLengths(bool effective){//{{{
    }
    return Ls;
 }//}}}
+bool TranscriptInfo::updateGeneNames(vector<string> geneList){
+   if((long)geneList.size() != M){
+      warning("TranscriptInfo: Number of items in gene list (%ld) does not match number of transcripts (%ld).",geneList.size(),M);
+      return false;
+   }   
+   for(long i=0;i<M;i++){
+      transcripts[i].g = geneList[i];
+   }
+   setGeneInfo();
+   return true;
+}
+bool TranscriptInfo::updateGeneNames(map<string,string> trGeneList){
+   if((long)trGeneList.size() != M){
+      warning("TranscriptInfo: Number of items in gene list (%ld) does not match number of transcripts (%ld).",trGeneList.size(),M);
+      return false;
+   }
+   // check all transcripts are in
+   long i;
+   for(i=0;i<M;i++){
+      if(!trGeneList.count(transcripts[i].t)){
+         warning("TranscriptInfo: No gene name for transcript [%s].",transcripts[i].t.c_str()); 
+         return false;
+      }
+   }
+   for(i=0;i<M;i++){
+      transcripts[i].g = trGeneList[transcripts[i].t];
+   }
+   setGeneInfo();
+   return true;
+}

@@ -21,7 +21,7 @@ extern "C" int getGeneExpression(int *argc,char* argv[]){
    ArgumentParser args(programDescription,"[sampleFiles]",1);
    args.addOptionS("t","trInfoFile","trInfoFileName",1,"Name of the transcript file.");
    args.addOptionB("a","adjustByLength","adjust",0,"Adjust expression by transcripts length.");
-   args.addOptionB("","rpkm","rpkm",0,"Output RPKM.");
+   args.addOptionB("","theta2rpkm","rpkm",0,"Transform transcript expression in theta to gene expression in RPKM.");
    args.addOptionS("o","outFile","outFileName",1,"Name of the output file.");
    args.addOptionB("l","log","log",0,"Output logged values.");
    if(!args.parse(*argc,argv))return 0;

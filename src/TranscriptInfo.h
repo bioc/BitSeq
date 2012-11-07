@@ -2,6 +2,7 @@
 #define TRANSCRIPTINFO_H
 #include<string>
 #include<vector>
+#include<map>
 #include<stdint.h>
 
 using namespace std;
@@ -47,6 +48,8 @@ class TranscriptInfo{
       bool genesOrdered();
       void setEffectiveLength(vector<double> effL);
       vector<double> *getShiftedLengths(bool effective = false);
+      bool updateGeneNames(vector<string> geneList);
+      bool updateGeneNames(map<string,string> trGeneList);
 };
 
 #endif
