@@ -4,14 +4,13 @@
 .argCheck.eELegacy <- function(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, MCMC_samplesSave=NULL, MCMC_samplesNmax=NULL, MCMC_chainsN=NULL, MCMC_scaleReduction=NULL, MCMC_dirAlpha=NULL, seed=NULL, verbose=NULL, pretend=FALSE){
    return(TRUE);
 }
-.argCheck.eE <- function(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, MCMC_samplesSave=NULL, MCMC_chainsN=NULL, MCMC_dirAlpha=NULL, seed=NULL, verbose=NULL, pretend=FALSE){
+.argCheck.eE <- function(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, MCMC_samplesSave=NULL, MCMC_chainsN=NULL, MCMC_dirAlpha=NULL, seed=NULL, verbose=NULL, procN=NULL, pretend=FALSE){
    return(TRUE);
 }
 
 
 ## Call of estimateExpression which uses [new] default method for convergence checking.
-estimateExpression <- function(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, MCMC_samplesSave=NULL, MCMC_chainsN=NULL, MCMC_dirAlpha=NULL, seed=NULL, verbose=NULL, pretend=FALSE){
-## , procN=NULL
+estimateExpression <- function(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, MCMC_samplesSave=NULL, MCMC_chainsN=NULL, MCMC_dirAlpha=NULL, seed=NULL, verbose=NULL, procN=NULL, pretend=FALSE){
    args <- c('estimateExpression ',probFile, '--outPrefix', outFile)
    if (!is.null(parFile)){
       args <- c(args, '--parFile', parFile )
@@ -25,9 +24,6 @@ estimateExpression <- function(probFile, outFile, parFile=NULL, outputType=NULL,
    if (!is.null(trInfoFile)) {
       args <- c(args, '--trInfoFile', trInfoFile )
    }
-   ##if (!is.null(procN)) {
-   ##   args <- c(args, '--procN', procN)
-   ##}
    if (!is.null(thetaActFile)) {
       args <- c(args, '--thetaActFile', thetaActFile)
    }
@@ -52,6 +48,10 @@ estimateExpression <- function(probFile, outFile, parFile=NULL, outputType=NULL,
    if (!is.null(verbose) && (verbose)) {
       args <- c(args, '--verbose')
    }
+   if (!is.null(procN)) {
+      args <- c(args, '--procN', procN)
+   }
+
    ## print(args)
 
    if(pretend){

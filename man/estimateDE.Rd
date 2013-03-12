@@ -7,28 +7,32 @@ Estimate condition mean expression for both experimental conditions using the ex
 \usage{
 estimateDE(conditions, outFile, parFile, 
       lambda0=NULL, samples=NULL, confidencePerc=NULL, 
-      verbose=NULL, norm=NULL, pretend=FALSE )
+      verbose=NULL, norm=NULL, seed=NULL, pretend=FALSE )
 }
 \arguments{
 \item{conditions}{\code{List} of vectors, each vector containing names of files containing the expression samples from a replicate (Can be both technical and biological replicates. However, in order to get good results biological replicates for each condition are essential).}
 \item{outFile}{Prefix for the output files.}
 \item{parFile}{File containing estimated hyperparameters.}
 \item{samples}{Produce samples of condition mean expression apart from PPLR and confidence.}
-\item{confidencePerc}{Percentage for confidence intervals.}
+\item{confidencePerc}{Percentage for confidence intervals. (Default is 95\%)}
 \item{verbose}{Verbose output.}
 Advanced options:
 \item{lambda0}{Model parameter lambda_0.}
 \item{norm}{Vector of (multiplicative) normalization constants for library size normalization of expression samples. Number of constants has to match the number of expression samples files.} 
+\item{seed}{Sets the initial random seed for repeatable experiments.}
 \item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 }
 \details{
 This function takes as an input expression samples from biological replicates of two or more conditions and hyperparameters over precision distribution inferred by \code{\link{estimateHyperPar}}.
 It uses pseudo-vectors of expression samples from all replicates to infer condition mean expression for each condition. 
+
 The condition mean expression samples are used for computation of the Probability of Positive Log Ratio (PPLR) as well as \eqn{\log_2}{log2} fold change of expression with confidence intervals and average condition mean expression for each transcript. 
 Optionally the function can produce also the samples of condition mean expression for each condition.
+
+For more than one conditions, the comparison is done pairwise between all conditions (\eqn{CP=\frac{C*(C-1)}{2}} pairs), reporting: CPxPPLR CPx(log2FC ciLow ciHigh) CxMeanExpr.
 }
 \value{
-\item{.pplr}{file containing the PPLR, confidence interval, mean log2 fold change, mean condition mean expressions}
+\item{.pplr}{file containing the PPLR, mean log2 fold change with confidence intervals, mean condition mean expressions}
 \item{.est}{files containing samples of condition mean expressions for each condition - optional}
 \item{.estVar}{file containing samples of inferred variance of the first condition - optional}
 }

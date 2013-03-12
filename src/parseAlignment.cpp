@@ -88,7 +88,7 @@ bool readNextFragment(samfile_t* samData, fragmentP &cur, fragmentP &next){//{{{
 
 extern "C" int parseAlignment(int *argc,char* argv[]){
 string programDescription =
-"Precomputes probabilities of (observed) reads' alignments.\n\
+"Pre-computes probabilities of (observed) reads' alignments.\n\
    [alignment file] should be in either SAM or BAM format.\n";
    TranscriptInfo *trInfo=NULL;
    TranscriptSequence *trSeq=NULL;
@@ -98,7 +98,6 @@ string programDescription =
    long M=0,i;
    samfile_t *samData=NULL;
    // Intro: {{{
-   buildTime(argv[0],__DATE__,__TIME__);
    // Set options {{{
    ArgumentParser args(programDescription,"[alignment file]",1);
    args.addOptionS("o","outFile","outFileName",1,"Name of the output file.");
@@ -116,6 +115,7 @@ string programDescription =
    args.addOptionB("V","veryVerbose","veryVerbose",0,"Very verbose output.");
    args.addOptionL("","noiseMismatches","numNoiseMismatches",0,"Number of mismatches to be considered as noise.",LOW_PROB_MISSES);
    if(!args.parse(*argc,argv))return 0;
+   if(args.verbose)buildTime(argv[0],__DATE__,__TIME__);
 #ifdef SUPPORT_OPENMP
    omp_set_num_threads(args.getL("procN"));
 #endif
@@ -170,19 +170,36 @@ string programDescription =
    }//}}}
    // Read expression and initialize transcript sequence {{{
    if(args.verbose)message("Initializing fasta sequence reader.\n");
+   // Initialize fasta sequence reader.
    trSeq = new TranscriptSequence();
    trSeq->readSequence(args.getS("trSeqFileName")); 
+   // Check numbers for transcripts match.
    if(trSeq->getM() != M){
       error("Main: Number of transcripts in the alignment(%s) file and the sequence file are different: %ld vs %ld\n",args.getS("format").c_str(),M,trSeq->getM());
       return 1;
    }
+   // Check that length of each transcript matches.
    for(i=0;i<M;i++){
       if(trInfo->L(i) != (long)(trSeq->getTr(i))->size()){
          error("Main: Transcript info length and sequence length of transcript %ld DO NOT MATCH! (%ld %d)\n",i,trInfo->L(i),(int)((trSeq->getTr(i))->size()));
          return 1;
       }
    }
+   // If there were gene names in transcript sequence, assign them to transcript info.
+   if(trSeq->hasGeneNames() && (trSeq->getG()>1)){
+      if(trInfo->getG() == 1){
+         // If just one gene present, then assign gene names.
+         if(args.verbose)message("Found gene names in sequence file, updating transcript information.\n");
+         trInfo->updateGeneNames(trSeq->getGeneNames());
+      }else{
+         // If there is more than one gene name already, don't fix.
+         if(trInfo->getG() != trSeq->getG()){
+            warning("Main: Different number of genes detected in transcript information and sequence file (%ld %ld).\n   You might want to check your data.\n", trInfo->getG(), trSeq->getG());
+         }
+      }
+   }
    if(!args.flag("uniform")){
+      // Try loading expression file from previous estimation for non-uniform read model.
       if(args.isSet("expFileName")){
          if(args.verbose)message("Loading transcript initial expression data.\n");
          trExp = new TranscriptExpression(args.getS("expFileName"));
@@ -277,8 +294,6 @@ string programDescription =
    outF<<scientific;
    // }}}
    
-   //goto endProg;
-   
    // fill in "next" fragment:
    readNextFragment(samData, curF, nextF);
    // start reading:
@@ -315,9 +330,7 @@ string programDescription =
             if(curF->paired)failedReads.insert(bam1_qname(curF->second));
          }
       }
-#ifdef BIOC_BUILD
-      R_CheckUserInterrupt();
-#endif
+      R_INTERUPT;
    }
    if(args.verbose)message("Analyzed %ld single reads and %ld paired-end reads.\n",singleN,pairedN);
    outF.close();
@@ -344,7 +357,6 @@ string programDescription =
       timer.split(0,'m');
    }
    // Close, free and write failed reads if filename provided {{{
-   //   endProg:
    delete curF;
    delete nextF;
    delete trInfo;

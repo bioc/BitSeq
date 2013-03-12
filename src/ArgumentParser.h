@@ -12,26 +12,6 @@ struct Option{//{{{
    OptionType type;
    string shortName,longName,description;
 };//}}}
-/* Unused code {{{
-class caseFreeCompare{
-   private:
-      char lowerC(char c)inline {
-         if((c>='A')&&(c<='Z'))return c-'A'+'a';
-         return c;
-      }
-   public:
-      bool operator()(string a,string b){
-         for(long i=0;i<(long)a.size();i++){
-            if(i>=(long)b.size())return false;
-            if(a[i]==b[i])continue;
-            if(lowerC(a[i])<lowerC(b[i]))return true;
-            if(lowerC(a[i])>lowerC(b[i]))return false;
-            return ((a[i]>='a')&&(a[i]<='z'));
-         }
-         return true;
-      }
-} }}}*/
-
 
 class ArgumentParser{
    private:
@@ -46,20 +26,18 @@ class ArgumentParser{
       vector<string> compulsory;
       long minimumArguments;
 
-      bool existsOption(string name);
-      bool existsName(string name);
+      bool existsOption(string name) const;
+      bool existsName(string name) const;
       template <typename valueType>
       void appendDescription(string &desc,valueType defValue);
    public:
       bool verbose;
 
-      ArgumentParser(string pD="", string aD="[FILES]", long minArgs = 1){//{{{
+      ArgumentParser(const string &pD="",const string &aD="[FILES]", long minArgs = 1){//{{{
          verbose = false;
-         programDesc=pD; 
-         argumentDesc=aD; 
-         minimumArguments = minArgs;
+         init(pD,aD,minArgs);
       }//}}}
-      void init(string pD="", string aD="[FILES]", long minArgs = 1){//{{{
+      void init(const string &pD="",const string &aD="[FILES]", long minArgs = 1){//{{{
          programDesc=pD; 
          argumentDesc=aD; 
          minimumArguments = minArgs;
@@ -69,24 +47,16 @@ class ArgumentParser{
       void addOptionL(string shortName, string longName, string name, bool comp, string description="", long defValue=-47);
       void addOptionD(string shortName, string longName, string name, bool comp, string description="", double defValue=-47.47);
       void addOptionB(string shortName, string longName, string name, bool comp, string description="", bool defValue=false);
-      string getS(string name);
-      long getL(string name);
-      double getD(string name);
-      vector<string>& args();
-      vector<double> getTokenizedS2D(string name);
-      bool flag(string name);
-      bool isSet(string name);
+      bool verb() const { return verbose; }
+      string getS(string name) const;
+      long getL(string name) const;
+      double getD(string name) const;
+      const vector<string>& args() const { return arguments; }
+      vector<double> getTokenizedS2D(string name) const;
+      bool flag(string name) const;
+      bool isSet(string name) const;
       void usage();
       void writeAll();
-      /*
-      ArgumentParser(){//{{{
-         init();
-      }//}}}
-      void init(string pD="", string aD="[FILES]", long minArgs = 1){//{{{
-         programDesc=pD; 
-         argumentDesc=aD; 
-         minimumArguments = minArgs;
-      }//}}}*/
 };
 
 #endif

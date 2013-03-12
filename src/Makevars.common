@@ -1,13 +1,34 @@
 
 COFLAGS= -mtune=generic -O3 -pipe
-PKG_CPPFLAGS+= -DBIOC_BUILD  -I. 
-#PKG_CXXFLAGS= $(SHLIB_OPENMP_CXXFLAGS)
-#PKG_CFLAGS= $(SHLIB_OPENMP_CFLAGS) $(DFLAGS)
-#PKG_LIBS= -lz $(SHLIB_OPENMP_CXXFLAGS)
-#PKG_CFLAGS= $(DFLAGS)
+PKG_CPPFLAGS+= -DSUPPORT_OPENMP -DBIOC_BUILD  -I. 
+PKG_CXXFLAGS= $(SHLIB_OPENMP_CXXFLAGS)
 
 
-OBJECTS= getGeneExpression.o getWithinGeneExpression.o ReadDistribution.o ParseAlignment.o common.o ArgumentParser.o TagAlignments.o TranscriptInfo.o TranscriptSequence.o TranscriptExpression.o estimateExpression.o Sampler.o GibbsSampler.o CollapsedSampler.o GibbsParameters.o transposeFiles.o getVariance.o PosteriorSamples.o estimateHyperPar.o lowess.o estimateDE.o R_init_BitSeq.o
+OBJECTS= \
+   ArgumentParser.o \
+   CollapsedSampler.o \
+   common.o \
+   estimateDE.o \
+   estimateExpression.o \
+   estimateHyperPar.o \
+   FileHeader.o \
+   getGeneExpression.o \
+   getVariance.o \
+   getWithinGeneExpression.o \
+   GibbsParameters.o \
+   GibbsSampler.o \
+   lowess.o \
+   misc.o \
+   ParseAlignment.o \
+   PosteriorSamples.o \
+   ReadDistribution.o \
+   Sampler.o \
+   TagAlignments.o \
+   TranscriptExpression.o \
+   TranscriptInfo.o \
+   TranscriptSequence.o \
+   transposeFiles.o \
+   R_init_BitSeq.o \
 
 all: $(SHLIB)
 

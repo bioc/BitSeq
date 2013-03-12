@@ -28,37 +28,34 @@ vector <double> tokenizeD(const string &input,const string &space = ","){//{{{
 
 
 // GET {{{
-vector<string>& ArgumentParser::args(){
-   return arguments;
-}
-string ArgumentParser::getS(string name){
+string ArgumentParser::getS(string name) const{
    if(!existsOption(name))error("ArgumentParser: argument name %s unknown.\n",name.c_str());
    if(mapS.find(name)!=mapS.end())
-      return mapS[name];
+      return mapS.find(name)->second;
    return "";
 }
-long ArgumentParser::getL(string name){
+long ArgumentParser::getL(string name) const{
    if(!existsOption(name))error("ArgumentParser: argument name %s unknown.\n",(name).c_str());
    if(mapL.find(name)!=mapL.end())
-      return mapL[name];
+      return mapL.find(name)->second;
    return -1;
 }
-double ArgumentParser::getD(string name){
+double ArgumentParser::getD(string name) const{
    if(!existsOption(name))error("ArgumentParser: argument name %s unknown.\n",(name).c_str());
    if(mapD.find(name)!=mapD.end())
-      return mapD[name];
+      return mapD.find(name)->second;
    return -1;
 }
-bool ArgumentParser::flag(string name){
+bool ArgumentParser::flag(string name) const {
    if(!existsOption(name))error("ArgumentParser: argument name %s unknown.\n",(name).c_str());
    return isSet(name);
-}//}}}
-vector<double> ArgumentParser::getTokenizedS2D(string name){
+}
+vector<double> ArgumentParser::getTokenizedS2D(string name) const{
    if(!existsOption(name))error("ArgumentParser: argument name %s unknown.\n",name.c_str());
    if(mapS.find(name)!=mapS.end())
-      return tokenizeD(mapS[name]);
+      return tokenizeD(mapS.find(name)->second);
    return vector<double>();
-}
+}//}}}
 bool ArgumentParser::parse(int argc,char * argv[]){//{{{
 //   for(long i=0;i<argc;i++)message("_%s_\n",(args[i]).c_str());
    // add verbose if  possible {{{
@@ -227,8 +224,9 @@ void ArgumentParser::addOptionS(string shortName,string longName, string name, b
    if(longName!="")names[longName]=name;
    if(comp)compulsory.push_back(name);
 }//}}}
+//{{{ void ArgumentParser::appendDescription(string &desc,valueType defValue)
 template <typename valueType>
-void ArgumentParser::appendDescription(string &desc,valueType defValue){//{{{
+void ArgumentParser::appendDescription(string &desc,valueType defValue){
    stringstream descStream;
    descStream<<desc<<" (default: "<<defValue<<")";
    desc = descStream.str();
@@ -267,9 +265,9 @@ void ArgumentParser::usage(){//{{{
       }
    }
 }//}}}
-bool ArgumentParser::isSet(string name){//{{{
+bool ArgumentParser::isSet(string name) const {//{{{
    if(! existsOption(name))return false;
-   switch(validOptions[name].type){
+   switch(validOptions.find(name)->second.type){
       case OTSTRING:
          if(mapS.find(name)==mapS.end())return false;
          else return true;
@@ -278,18 +276,18 @@ bool ArgumentParser::isSet(string name){//{{{
          else return true;
       case OTBOOL:
          if(mapB.find(name)==mapB.end())return false;
-         else return mapB[name];
+         else return mapB.find(name)->second;
       case OTDOUBLE:
          if(mapD.find(name)==mapD.end())return false;
          else return true;
    }
    return false;
 }//}}}
-bool ArgumentParser::existsName(string name){//{{{
+bool ArgumentParser::existsName(string name) const {//{{{
    if(names.find(name)==names.end())return false;
    return true;
 }//}}}
-bool ArgumentParser::existsOption(string name){//{{{
+bool ArgumentParser::existsOption(string name) const {//{{{
    if(validOptions.find(name)==validOptions.end())return false;
    return true;
 }//}}}

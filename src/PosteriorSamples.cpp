@@ -21,7 +21,7 @@ string lower(string str){
    return str;
 }
 
-PosteriorSamples::PosteriorSamples(){//{{{
+void PosteriorSamples::clear(){//{{{
    N=0;
    M=0;
    norm = 1.0;
@@ -39,20 +39,12 @@ bool PosteriorSamples::open(string fileName){//{{{
    }
    return true;
 }//}}}
-/*bool PosteriorSamples::init(long n, long m,bool t,string fileName){//{{{
-   failed=false;
-   if(! open(fileName))return false;
-   N=n;
-   M=m;
-   transposed=t; 
-   return read();
-}//}}}*/
 bool PosteriorSamples::initSet(long &m,long &n, string fileName){//{{{
    failed=false;
    if(! open(fileName))return false;
-    
+   
    FileHeader fh(&samplesF);
-   if(!fh.samplesHeader(N,M,transposed,areLogged)){
+   if(!fh.samplesHeader(&N,&M,&transposed,&areLogged)){
       error("PosteriorSamples: File header reading failed.\n");
       failed=true;
       return false;
@@ -145,15 +137,15 @@ Conditions::Conditions(){//{{{
 long Conditions::getIndex(long max){ // {{{returns index, without checking for duplicates
    return rand() % max;
 }//}}}
-long Conditions::getRC(long c){ //{{{
+long Conditions::getRC(long c) const { //{{{
    if(c>C)return -1;
    return cIndex[c].SS;
 }//}}}
-bool Conditions::init(long &m,long &n,string trFileName, vector<string> filesGot){//{{{
+bool Conditions::init(string trFileName, vector<string> filesGot, long *m, long *n){//{{{
    long c;
-   return init(c,m,n,trFileName,filesGot);
+   return init(trFileName,filesGot,&c,m,n);
 }//}}}
-bool Conditions::init(long &c,long &m,long &n,string trFileName, vector<string> filesGot){//{{{
+bool Conditions::init(string trFileName, vector<string> filesGot, long *c, long *m, long *n){//{{{
    long i,j,x,colN;
    bool sameMs=true;
    vector<string> files;
@@ -172,11 +164,11 @@ bool Conditions::init(long &c,long &m,long &n,string trFileName, vector<string> 
       cIndex.pop_back();
    }
    C = Sof(cIndex);
-   c = C;
+   *c = C;
    //message("File names processed.\n");
 
    CN = Sof(files);
-   samples = new PosteriorSamples[CN];
+   samples.resize(CN);
    Ms.resize(CN);
    Ns.resize(CN);
    if(! samples[0].initSet(Ms[0],Ns[0],files[0])){
@@ -200,14 +192,14 @@ bool Conditions::init(long &c,long &m,long &n,string trFileName, vector<string> 
       }
       if(N>Ns[i])N=Ns[i];
    }
-   n=N;
+   *n=N;
 
    ifstream trFile(trFileName.c_str());
    if(! trFile.is_open()){
    // if there is no transcript join file, the we have to make sure that Ms are the same
       if(sameMs){
          M=Ms[0];
-         m=M;
+         *m=M;
          mapping = false;
          return true;
       }else{
@@ -216,11 +208,11 @@ bool Conditions::init(long &c,long &m,long &n,string trFileName, vector<string> 
       }  
    }else{
       FileHeader fh(&trFile);
-      if((!fh.transcriptsHeader(M,colN))||(M==0)||(colN<CN+1)){
+      if((!fh.transcriptsHeader(&M,&colN))||(M==0)||(colN<CN+1)){
          error("Conditions: Wrong transcript join descriptor file - m: %ld colN: %ld\n",M,colN);
          return false;
       }
-      m=M;
+      *m=M;
       trMap.resize(M,vector<long>(CN));
       for(i=0;i<M;i++){
          trFile>>x;
@@ -307,6 +299,5 @@ void Conditions::close(){//{{{
    for(long i=0;i<CN;i++){
       samples[i].close();
    }
-   delete[] samples;
    cIndex.clear();
 }//}}}

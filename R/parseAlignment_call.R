@@ -14,8 +14,7 @@
 #   args.addOptionL("","noiseMismatches","numNoiseMismatches",0,"Number of mismatches to be considered as noise.",LOW_PROB_MISSES);
 
 
-parseAlignment <- function( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL, expressionFile=NULL, readsN=NULL, uniform=TRUE, lenMu=NULL, lenSigma=NULL, verbose=NULL, veryVerbose=NULL, pretend=FALSE){
-##  procN=NULL,
+parseAlignment <- function( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL, expressionFile=NULL, readsN=NULL, uniform=TRUE, lenMu=NULL, lenSigma=NULL, verbose=NULL, veryVerbose=NULL, procN=NULL, pretend=FALSE){
    args <- c('parseAlignment', alignFile, '--outFile', outFile , '--trSeqFile', trSeqFile)
    if (!is.null(inputFormat)) {
       args <- c(args, '--format', inputFormat)
@@ -29,9 +28,6 @@ parseAlignment <- function( alignFile, outFile, trSeqFile, inputFormat=NULL, trI
    if (!is.null(readsN)) {
       args <- c(args, '--readsN', readsN)
    }
-   ##if (!is.null(procN)) {
-   ##   args <- c(args, '--procN', procN)
-   ##}
    if (!is.null(lenMu)) {
       args <- c(args, '--lenMu', lenMu)
    }
@@ -46,6 +42,9 @@ parseAlignment <- function( alignFile, outFile, trSeqFile, inputFormat=NULL, trI
    }
    if (!is.null(veryVerbose) && (veryVerbose)) {
       args <- c(args, '--veryVerbose')
+   }
+   if (!is.null(procN)) {
+      args <- c(args, '--procN', procN)
    }
 
    if(pretend){

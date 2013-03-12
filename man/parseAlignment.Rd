@@ -7,7 +7,7 @@
 \usage{
 parseAlignment( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL, 
       expressionFile=NULL, readsN=NULL, uniform=TRUE, lenMu=NULL, lenSigma=NULL, 
-      verbose=NULL, veryVerbose=NULL, pretend=FALSE)
+      verbose=NULL, veryVerbose=NULL, procN=NULL, pretend=FALSE)
 }
 \arguments{
 \item{alignFile}{File containing read alignments.}
@@ -22,9 +22,9 @@ parseAlignment( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL
 \item{lenMu}{Set mean of log fragment length distribution. \eqn{l_{frag} \sim LogNormal(\mu,\sigma^2)}{l_frag ~ LogNormal(mu,sigma^2)}}
 \item{lenSigma}{Set \eqn{\sigma^2}{sigma^2} (or variance) of log fragment length distribution. \eqn{l_{frag} \sim LogNormal(\mu,\sigma^2)}{l_frag ~ LogNormal(mu,sigma^2)}}
 %\item{distributionFile}{Name of file to which read-distribution should be saved.}
-%\item{procN}{Maximum number of threads to be used.}
 \item{verbose}{Verbose output.}
 \item{veryVerbose}{Very verbose output.}
+\item{procN}{Maximum number of threads to be used.}
 \item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 }
 \details{

@@ -7,7 +7,7 @@
 estimateExpression(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, 
       trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, 
       MCMC_samplesSave=NULL, MCMC_chainsN=NULL, MCMC_dirAlpha=NULL, seed=NULL, 
-      verbose=NULL, pretend=FALSE)
+      verbose=NULL, procN=NULL, pretend=FALSE)
 estimateExpressionLegacy(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, 
       trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, 
       MCMC_samplesSave=NULL, MCMC_samplesNmax=NULL, MCMC_chainsN=NULL, 
@@ -21,13 +21,13 @@ estimateExpressionLegacy(probFile, outFile, parFile=NULL, outputType=NULL, gibbs
 \item{gibbs}{Use regular Gibbs sampling instead of Collapsed Gibbs sampling.}
 \item{parFile}{File containing parameters for the sampler, which can be otherwise specified by [MCMC*] options. As the file is checked after every MCMC iteration, the parameters can be adjusted while running.}
 \item{trInfoFile}{File containing transcript information. (Necessary for RPKM)}
-% \item{procN}{Maximum number of threads to be used. The program will not use more threads that there are MCMC chains.}
 \item{MCMC_burnIn}{Length of sampler's burn in period.}
 \item{MCMC_samplesN}{Initial number of samples produced. These are used either to estimate the number of necessary samples or to estimate possible scale reduction.}
 \item{MCMC_samplesSave}{Number of samples recorder at the end in total.}
 \item{MCMC_chainsN}{Number of parallel chains used. At least two chains will be used.}
 \item{seed}{Sets the initial random seed for repeatable experiments.}
 \item{verbose}{Verbose output.}
+\item{procN}{Maximum number of threads to be used. The program will not use more threads that there are MCMC chains.}
 Advanced options:
 \item{thetaActFile}{File for logging noise parameter thetaAct, which is only generated when regular Gibbs sampling is used.}
 \item{MCMC_dirAlpha}{Alpha parameter for the Dirichlet distribution.}

@@ -3,18 +3,26 @@
 
 #include<string>
 
-using namespace std;
+using std::string;
+
+const char bitseq_version[] = "0.5.0";
 
 #ifdef BIOC_BUILD
 
 #include <R.h>
 #include <R_ext/Utils.h>
 
+#define R_INTERUPT R_CheckUserInterrupt()
+
 #define message(...) Rprintf(__VA_ARGS__)
+
+const long samplesAtOnce = 20;
 
 #else
 
 #include<cstdio>
+
+#define R_INTERUPT
 
 #define message(...) printf(__VA_ARGS__)
 #define warning(...) {fprintf(stderr,"WARNING: ");fprintf(stderr, __VA_ARGS__);}
@@ -22,7 +30,7 @@ using namespace std;
 
 #endif
 
-void buildTime(char *argv0, string compileDate, string compileTime);
+void buildTime(char *argv0, string compileDate, string compileTime, const char *version = bitseq_version);
 
 bool progressLog(long cur,long outOf, long steps = 10);
 

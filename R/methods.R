@@ -1,5 +1,5 @@
 ## compute PPLR for two or more conditions
-getDE <- function( conditions, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, norm=NULL, pretend=FALSE ){
+getDE <- function( conditions, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, norm=NULL, seed=NULL, pretend=FALSE ){
    ## pretend needs prefix
    if(pretend && is.null(outPrefix)){
       message("In case of no outPrefix provided this function uses R temporary directories which are only valid during the current session.")
@@ -27,9 +27,9 @@ getDE <- function( conditions, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, n
    message("Computing overall mean.");
    getMeanVariance(conditions,meanFile,log=TRUE,norm=norm,pretend=pretend);
    message("Estimating hyperparameters.");
-   estimateHyperPar(parFile,conditions,meanFile=meanFile,norm=norm,pretend=pretend);
+   estimateHyperPar(parFile,conditions,meanFile=meanFile,norm=norm,seed=seed,pretend=pretend);
    message("Estimating condition mean expression and PPLR.");
-   estimateDE(conditions,outPrefix,parFile,samples=samples,norm=norm,pretend=pretend);
+   estimateDE(conditions,outPrefix,parFile,samples=samples,norm=norm,seed=seed,pretend=pretend);
    if(samples){
       samplesFiles = c();
       for(i in 1:length(conditions)){
@@ -43,7 +43,19 @@ getDE <- function( conditions, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, n
       data <- NULL
    }else{
       data <- loadSamples( pplrFN, trInfoFile);
-      colnames(data)<-c("pplr", "log2FC", "ConfidenceLow", "ConfidenceHigh", "meanC1", "meanC2");
+      condN <- length(conditions);
+      pplrList <- c();
+      fcList <- c();
+      meanList <- c();
+      for(i in 1:condN){
+         meanList <- c(meanList, paste("mean",i,sep=" "));
+         if(i == condN) break;
+         for(j in (i+1):condN){
+            pplrList <- c(pplrList, paste("pplr ",i,"~",j,sep=""));
+            fcList <- c(fcList, paste("log2FC ",i,"~",j,sep=""), "ciLow", "ciHigh");
+         }
+      }
+      colnames(data)<-c(pplrList, fcList, meanList);
    }
    return(list(pplr=data,fn=list(pplr=pplrFN,samplesFiles=samplesFiles)));
 }
@@ -72,11 +84,11 @@ getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, ty
    iFormat <- switch(.getExt(alignFile),bam="BAM",BAM="BAM","SAM");
    if(! uniform){
       probUF <- paste(outPrefix,"-U",".prob",sep="");
-      print(probUF);
+      trUF <- paste(outPrefix,"-U",".tr",sep="");
       message("## Pre-Computing alignment probabilities with uniform read distribution.");
-      parseAlignment(alignFile, probUF, trSeqFile, inputFormat=iFormat, uniform=FALSE,pretend=pretend);
+      parseAlignment(alignFile, probUF, trSeqFile, trInfoFile=trUF, inputFormat=iFormat, uniform=FALSE,pretend=pretend);
       message("## Pre-Computing expression with uniform read distribution.");
-      estimateExpression(probUF, paste(outPrefix,"-U",sep=""), outputType="theta", MCMC_burnIn=1000, MCMC_samplesN=1000, MCMC_samplesSave=10, MCMC_chainsN=2, pretend=pretend);
+      estimateExpression(probUF, paste(outPrefix,"-U",sep=""), outputType="theta", trInfoFile=trUF, MCMC_burnIn=1000, MCMC_samplesN=1000, MCMC_samplesSave=10, MCMC_chainsN=2, pretend=pretend);
       exprFile <- paste(outPrefix,"-U",".thetaMeans",sep=""); 
    }else{
       exprFile <- NULL;

@@ -4,7 +4,7 @@
 #  args.addOptionD("l","lambda0","lambda0",0,"Parameter lambda_0.",LAMBDA_0);
 #  args.addOptionD("c","confidencePerc","cf",0,"Percentage for confidence intervals.", 5);
 
-estimateDE <- function( conditions, outFile, parFile, lambda0=NULL, samples=NULL, confidencePerc=NULL, verbose=NULL, norm=NULL, pretend=FALSE ){
+estimateDE <- function( conditions, outFile, parFile, lambda0=NULL, samples=NULL, confidencePerc=NULL, verbose=NULL, norm=NULL, seed=NULL, pretend=FALSE ){
    ## unlist norm
    norm <- unlist(norm);
    args <- c('estimateDE', unlist(conditions[[1]]));
@@ -20,7 +20,7 @@ estimateDE <- function( conditions, outFile, parFile, lambda0=NULL, samples=NULL
       args <- c(args, '--samples')
    }
    if (!is.null(confidencePerc)) {
-      args <- c(args, '--confidencePerc', confidencePerc)
+      args <- c(args, '--confidenceInterval', confidencePerc)
    }
    
    if (!is.null(verbose) && (verbose)) {
@@ -31,6 +31,9 @@ estimateDE <- function( conditions, outFile, parFile, lambda0=NULL, samples=NULL
          stop("The number of normalization constants has to match the number of sample files.");
       }
       args <- c(args, '--norm', paste(norm, collapse=","));
+   }
+   if (!is.null(seed)) {
+      args <- c(args, '--seed', seed)
    }
 
    if(pretend){

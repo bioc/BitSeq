@@ -4,7 +4,7 @@
 \description{Using expression samples, program estimates the probability of differential expression for each transcript.}
 \usage{
 getDE(conditions, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, 
-      norm=NULL, pretend=FALSE )
+      norm=NULL, seed=NULL, pretend=FALSE )
 }
 \arguments{
 \item{conditions}{\code{List} of vectors, each vector containing names of files containing the expression samples from a replicate (Can be both technical and biological replicates. However, in order to get good results biological replicates for each condition are essential).}
@@ -12,6 +12,7 @@ getDE(conditions, outPrefix=NULL, samples=FALSE, trInfoFile=NULL,
 \item{samples}{Produce samples of condition mean expression apart from PPLR and confidence.}
 \item{trInfoFile}{Transcript information file providing the names of transcripts.}
 \item{norm}{Vector of (multiplicative) normalization constants for library size normalization of expression samples. Number of constants has to match the number of expression samples files.} 
+\item{seed}{Sets the initial random seed for repeatable experiments.}
 \item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 }
 \details{
