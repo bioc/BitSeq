@@ -84,6 +84,10 @@ $ bowtie -q -v 3 -3 0 -p 4 -a -m 100 --sam ensSelect1-index \
 In the following examples we will be using the \FILE{data-c0b0.sam} file provided with the package. 
 To make the life easier we set our current directory to the \FILE{extdata} directory.
 <<>>=
+# save the current directory
+# (we move back to old_directory at the end of vignette)
+old_directory = getwd();
+# move to directory with the data
 setwd(system.file("extdata",package="BitSeq"));
 @
 
@@ -305,6 +309,9 @@ res1 <- getExpression("data-c0b0.sam",
    MCMC_burnIn=200,
    MCMC_samplesN=200,
    pretend=TRUE)
+
+# restore the original working directory
+setwd(old_directory);
 @
 
 
