@@ -11,14 +11,16 @@ extern "C" {
    int getWithinGeneExpression(int *argc, char* argv[]);
 }
 
+static R_NativePrimitiveArgType my_types[] = {INTSXP, STRSXP};
+
 static const R_CMethodDef cMethods[] = {
-   {"_parseAlignment", (DL_FUNC) &parseAlignment, 2, (R_NativePrimitiveArgType[4]){INTSXP, STRSXP} },
-   {"_estimateExpression", (DL_FUNC) &estimateExpression, 2, (R_NativePrimitiveArgType[4]){INTSXP, STRSXP} },
-   {"_getVariance", (DL_FUNC) &getVariance, 2, (R_NativePrimitiveArgType[4]){INTSXP, STRSXP} },
-   {"_estimateHyperPar", (DL_FUNC) &estimateHyperPar, 2, (R_NativePrimitiveArgType[4]){INTSXP, STRSXP} },
-   {"_estimateDE", (DL_FUNC) &estimateDE, 2, (R_NativePrimitiveArgType[4]){INTSXP, STRSXP} },
-   {"_getGeneExpression", (DL_FUNC) &getGeneExpression, 2, (R_NativePrimitiveArgType[4]){INTSXP, STRSXP} },
-   {"_getWithinGeneExpression", (DL_FUNC) &getWithinGeneExpression, 2, (R_NativePrimitiveArgType[4]){INTSXP, STRSXP} },
+   {"_parseAlignment", (DL_FUNC) &parseAlignment, 2, my_types },
+   {"_estimateExpression", (DL_FUNC) &estimateExpression, 2, my_types },
+   {"_getVariance", (DL_FUNC) &getVariance, 2, my_types },
+   {"_estimateHyperPar", (DL_FUNC) &estimateHyperPar, 2, my_types },
+   {"_estimateDE", (DL_FUNC) &estimateDE, 2, my_types },
+   {"_getGeneExpression", (DL_FUNC) &getGeneExpression, 2, my_types },
+   {"_getWithinGeneExpression", (DL_FUNC) &getWithinGeneExpression, 2, my_types },
    {NULL, NULL, 0}
 };
 
