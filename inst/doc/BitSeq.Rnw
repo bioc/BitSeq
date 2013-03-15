@@ -87,6 +87,7 @@ To make the life easier we set our current directory to the \FILE{extdata} direc
 # save the current directory
 # (we move back to old_directory at the end of vignette)
 old_directory = getwd();
+on.exit(setwd(old_directory))
 # move to directory with the data
 setwd(system.file("extdata",package="BitSeq"));
 @
