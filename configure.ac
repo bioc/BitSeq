@@ -35,9 +35,11 @@ AC_DEFINE([BIOC_BUILD])
 
 # Rsamtools makefile includes:
 AC_SUBST(SAM_INCLUDE, [`echo 'cat(system.file("usretc", .Platform[["r_arch"]],"Rsamtools.mk", package="Rsamtools", mustWork=TRUE))' |"${R_HOME}/bin/R" --vanilla --slave`])
-
 AC_MSG_NOTICE([SAM_INCLUDE: $SAM_INCLUDE])
 
+# Set package version substitution for windows makefile.
+AC_SUBST(PACKAGE_VERSION, ${PACKAGE_VERSION})
+
 # Write config files.
-AC_CONFIG_FILES([src/Makevars])
+AC_CONFIG_FILES([src/Makevars src/Makevars.win])
 AC_OUTPUT
