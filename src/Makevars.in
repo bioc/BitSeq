@@ -1,0 +1,6 @@
+PKG_CPPFLAGS+= @DEFS@
+PKG_CXXFLAGS+= -I. @OPENMP_CXXFLAGS@
+
+include @SAM_INCLUDE@
+
+include Makevars.common

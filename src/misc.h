@@ -1,7 +1,7 @@
 #ifndef MISC_H
 #define MISC_H
 
-#include<fstream>
+#include <fstream>
 
 #include "ArgumentParser.h"
 #include "PosteriorSamples.h"

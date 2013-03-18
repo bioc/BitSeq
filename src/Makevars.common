@@ -1,9 +1,3 @@
-
-COFLAGS= -mtune=generic -O3 -pipe
-PKG_CPPFLAGS+= -DSUPPORT_OPENMP -DBIOC_BUILD  -I. 
-PKG_CXXFLAGS= $(SHLIB_OPENMP_CXXFLAGS)
-
-
 OBJECTS= \
    ArgumentParser.o \
    CollapsedSampler.o \
@@ -28,7 +22,4 @@ OBJECTS= \
    TranscriptInfo.o \
    TranscriptSequence.o \
    transposeFiles.o \
-   R_init_BitSeq.o \
-
-all: $(SHLIB)
-
+   R_init_BitSeq.o
