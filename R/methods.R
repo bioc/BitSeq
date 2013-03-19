@@ -113,7 +113,6 @@ getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, ty
    return(list(exp=means , fn=outFile));
 }
 
-
 ## load expression samples into DataFrame
 loadSamples <- function(fileName, trInfoFile=NULL){
    if(is.null(fileName) || (!file.exists(fileName)))stop("Please provide valid file name.");
@@ -128,8 +127,8 @@ loadSamples <- function(fileName, trInfoFile=NULL){
       }
    }
    data <- read.table(fileName, sep=" ");
+   ## omit last column if its NA
    if(is.na(data[1,dim(data)[2]])){
-      ## omit last column if its NA
       return( IRanges::DataFrame(data[,1:dim(data)[2]-1], row.names=as.vector(trNames) ));
    }else{
       return( IRanges::DataFrame(data, row.names=as.vector(trNames) ));
@@ -163,7 +162,7 @@ writeSamples <- function(data,fileName){
    return(tail(unlist(strsplit(name,split="\\.")),1));
 }
 
-# paste string so that is within 75ch width and lines are ending with \ (i.e. it's usable in bash
+# paste string so that it is within 75ch width and lines are ending with \ (i.e. it's usable in bash)
 .specialPaste <-function(strVec){
    ret <- strVec[1];
    c_len <- nchar(ret);
