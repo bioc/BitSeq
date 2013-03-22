@@ -10,8 +10,8 @@ The BitSeq package is targeted for transcript expression analysis and differenti
 \tabular{ll}{
 Package: \tab BitSeq\cr
 Type: \tab Package\cr
-Version: \tab 0.3.0\cr
-Date: \tab 2012-03-09\cr
+Version: \tab 1.4.0\cr
+Date: \tab 2013-04-01\cr
 License: \tab Artistic-2.0 + other\cr
 }
 For details of using the package please refer to the Vignette.
