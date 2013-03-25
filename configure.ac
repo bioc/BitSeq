@@ -1,11 +1,17 @@
-m4_define([BS_VERSION],
-          m4_bpatsubst(m4_esyscmd([grep Version DESCRIPTION]),
-                       [.*Version:[ \t]\([0-9.]*\)\(\w\|\W\)*],
-                       [\1]))
-AC_INIT([Bitseq], [BS_VERSION], [glaus@cs.man.ac.uk])
+# Even though it's not used at the end, the 1.4.x should be updated before each release.
+AC_INIT([BitSeq], [1.4.x])
 AC_PREREQ([2.59])
 
 m4_include([m4/ac_openmp.m4])
+
+# Determine version.
+BS_VERSION=`grep "^Version" DESCRIPTION | sed -e 's/Version:[[[:space:]]]*\([[0-9.]]*\).*/\1/'`
+# Set package version define with current version.
+AC_DEFINE_UNQUOTED(BS_VERSION, "${BS_VERSION}")
+# Substitue DEF_VERSION with version, this is for Makevars.win.
+AC_SUBST(DEF_VERSION, [-DBS_VERSION=\\\"${BS_VERSION}\\\"])
+VOID_DUMP=[" \" "]
+AC_MSG_NOTICE([Version def: $DEF_VERSION])
 
 # Find the compiler and compiler flags to use
 : ${R_HOME=`R RHOME`}
@@ -23,6 +29,7 @@ AC_LANG(C++)
 
 # OpenMP magic.
 AC_OPENMP
+# Substitute OPENMP_CXXFLAGS.
 AC_SUBST(OPENMP_CXXFLAGS,${OPENMP_CXXFLAGS})
 
 # Add SUPPORT_OPENMP pre-processor flag if relevant.
@@ -33,12 +40,9 @@ AS_IF([test "${OPENMP_CXXFLAGS}" == "" ],
 # Own defines.
 AC_DEFINE([BIOC_BUILD])
 
-# Rsamtools makefile includes:
-AC_SUBST(SAM_INCLUDE, [`echo 'cat(system.file("usretc", .Platform[["r_arch"]],"Rsamtools.mk", package="Rsamtools", mustWork=TRUE))' |"${R_HOME}/bin/R" --vanilla --slave`])
+# Rsamtools makefile includes: (extra [] because of autoconf)
+AC_SUBST(SAM_INCLUDE, [`echo 'cat(system.file("usretc", .Platform[[["r_arch"]]],"Rsamtools.mk", package="Rsamtools", mustWork=TRUE))' |"${R_HOME}/bin/R" --vanilla --slave`])
 AC_MSG_NOTICE([SAM_INCLUDE: $SAM_INCLUDE])
-
-# Set package version substitution for windows makefile.
-AC_SUBST(PACKAGE_VERSION, ${PACKAGE_VERSION})
 
 # Write config files.
 AC_CONFIG_FILES([src/Makevars src/Makevars.win])

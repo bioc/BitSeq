@@ -1,9 +1,10 @@
-SAMVARS=$(shell echo 'cat(system.file("usretc", .Platform[["r_arch"]], "Rsamtools.mk", package="Rsamtools", mustWork=TRUE))' | "${R_HOME}/bin/R" --vanilla --slave)
+# This should set SAM_INCLUDE to point to location Rsamtools.mk e.g.:
+# SAM_INCLUDE=F:/PROGRA~1/R/R-2.14.2/library/Rsamtools/usretc/i386/Rsamtools.mk
+SAM_INCLUDE=$(shell echo 'cat(system.file("usretc", .Platform[["r_arch"]], "Rsamtools.mk", package="Rsamtools", mustWork=TRUE))' | "${R_HOME}/bin/R" --vanilla --slave)
 
-include $(SAMVARS)
-#include F:/PROGRA~1/R/R-2.14.2/library/Rsamtools/usretc/i386/Rsamtools.mk
+include $(SAM_INCLUDE)
 
-PKG_CPPFLAGS+= -DPACKAGE_VERSION=\"1.3.4\" -DBIOC_BUILD  -I. 
+PKG_CPPFLAGS+= -DBS_VERSION=\"1.3.8\" -DBIOC_BUILD  -I. 
 
 include Makevars.common
 
