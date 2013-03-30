@@ -1,48 +1,62 @@
-Package: BitSeq
-===============
+CHANGES IN VERSION 1.3.10 (2013-03-30)
+-------------------------------------
+NEW FEATURES
+  o proper handling of alignments from Bowtie2
 
-Version 1.3.3
-- enabling estimateExpression and getDE with prallelization
-- gene names can be extracted from Ensembl-like reference while estimating expression
-- added seed option for estimateHyperPar and estimateDE
-- improved output for getDE when using more than 2 conditions
-- bug fix: fixed problem with long lines in reference sequence file in parseAlignment
+CHANGES IN VERSION 1.3.6 (2013-03-19)
+-------------------------------------
+NEW FEATURES
+  o enabling prallelization in getExpression via OpenMP
+  
+  o gene names can be extracted from Ensembl-like reference while estimating
+    expression
+  
+  o added seed option for estimateHyperPar and estimateDE 
+  
+  o improved output for getDE when using more than 2 conditions
+  
+BUG FIXES
+  o problem with long lines in reference sequence file in parseAlignment
 
-Version 1.3.2 (not available)
-Version 1.2.2 (29.1.2013)
-- bug fix for getExpression which caused occasional crash when using non-uniform model
+CHANGES IN VERSION 1.2.2 (2013-01-29)
+-------------------------------------
+  o occasional crash when using non-uniform read model in getExpression
 
-Version 1.3.1 (6.11.2012)
-Version 1.2.1 (6.11.2012)
-- bug fixes for parsing gapped alignments and half-alignments of paired end reads
+CHANGES IN VERSION 1.2.1 (2012-11-06)
+-------------------------------------
+  o parsing gapped alignments and half-alignments of paired end reads
 
-Version: 1.2.0 (27.9.2012)
-- IMPORTANT change: the way samples-files are passed to getDE, estimateHyperPar, estimateDE changed.
-  -> instead of providing 2 vectors of filenames for each condition, the files are passed as a list
-     of vectors, each vector containing filenames for one condition 
-  (allowing use of more than 2 conditions)
+CHANGES IN VERSION 1.2.0 (2012-09-27)
+-------------------------------------
+  o IMPORTANT change: the way samples-files are passed to getDE, 
+    estimateHyperPar, estimateDE changed: instead of providing 2 vectors of
+    filenames for each condition, the files are passed as a list of vectors,
+    each vector containing filenames for one condition (allowing use of more 
+    than 2 conditions)
 
-- new internal structure (not visible to user)
+  o new internal structure (not visible to user)
 
-- estimateExpression has a new convergence criterion which should result in producing fewer samples
-  (faster and dropping the use of MCMC_scaleReduction and MCMC_samplesNmax flags)
-  -> estimateExpressionLegacy uses the original convergence criterion
+  o estimateExpression has a new convergence criterion which should result in
+    producing fewer samples. It is faster and avoids the use of
+    MCMC_scaleReduction and MCMC_samplesNmax flags.
+  o estimateExpressionLegacy uses the original convergence criterion
 
-- library normalization option for getDE, estimateDE, estimateHyperPar, getMeanVariance
-  (in form of providing the normalization constants, for getting the constants please use edgeR or 
-   similar)
+  o library normalization option for getDE, estimateDE, estimateHyperPar,
+    getMeanVariance (in form of providing the normalization constants, for
+    getting the constants please use edgeR or similar)
 
-Version: 1.0.1 (30.4.2012)
-Version: 1.1.1 (30.4.2012)
+CHANGES IN VERSION 1.0.1 (2012-04-30)
+-------------------------------------
 
-- fixed bug in estimateExpression (reading file with probabilities occasionally failed when 
-  transcript information file was not specified) 
+  o fixed bug in estimateExpression (reading file with probabilities 
+    occasionally failed when transcript information file was not specified) 
 
-- improved manual, replaced overflowing lines
+  o improved manual, replaced overflowing lines
 
-- added option "pretend" to produce C++ calls 
+  o added option "pretend" to produce C++ calls 
 
 
-Version: 1.0.0
+CHANGES IN VERSION 1.0.0 (2012-04-01)
+-------------------------------------
 
-- First Bioconductor release of BitSeq
+  o First Bioconductor release of BitSeq
