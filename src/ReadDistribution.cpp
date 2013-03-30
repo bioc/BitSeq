@@ -1,9 +1,10 @@
 #include<cmath>
 #include<omp.h>
 
-#include "ReadDistribution.h"
-#include "MyTimer.h"
 #include "common.h"
+#include "misc.h"
+#include "MyTimer.h"
+#include "ReadDistribution.h"
 
 void inline progressLogRD(long cur,long outOf) {//{{{
    // output progress status every 10%
@@ -46,10 +47,10 @@ inline void mapAdd(map<long,double > &m, long key, double val){//{{{
       m[key] += val;
 }//}}}
 
-ReadDistribution::ReadDistribution(long m){ //{{{
-   M=m;
+ReadDistribution::ReadDistribution(){ //{{{
+   M=0;
    uniform = lengthSet = gotExpression = normalized = validLength = false;
-   warnPos = warnTIDmismatch = true;
+   warnPos = warnTIDmismatch = warnUnknownTID = noteFirstMateDown = 0;
    lMu=100;
    lSigma=10;
    verbose = true;
@@ -57,10 +58,23 @@ ReadDistribution::ReadDistribution(long m){ //{{{
    minFragLen=10000;
    lowProbMismatches = LOW_PROB_MISSES;
 }//}}}
-void ReadDistribution::setLowProbMismatches(long m){//{{{
-   lowProbMismatches = m>1 ? m:1;
+void ReadDistribution::writeWarnings() {//{{{
+   if(warnPos>0){
+      warning("ReadDistribution: %ld upstream reads from a pair did not align to the sense strand of transcript.\n", warnPos);
+   }
+   if(warnTIDmismatch>0){
+      warning("ReadDistribution: %ld pair reads were aligned to different transcripts.\n", warnTIDmismatch);
+   }
+   if(warnUnknownTID>0){
+      warning("ReadDistribution: %ld fragments were aligned to unknown transcripts.\n", warnUnknownTID);
+   }
+   if(noteFirstMateDown){
+      message("NOTE: ReadDistribution: First mate from a pair was downstream (%ld times).\n", noteFirstMateDown);
+   }
+   warnPos = warnTIDmismatch = warnUnknownTID = noteFirstMateDown = 0;
 }//}}}
-bool ReadDistribution::init(TranscriptInfo* trI, TranscriptSequence* trS, TranscriptExpression* trE, bool verb){ //{{{
+bool ReadDistribution::init(long m, TranscriptInfo* trI, TranscriptSequence* trS, TranscriptExpression* trE, bool verb){ //{{{
+   M = m;
    verbose = verb;
    if(trI==NULL){
       error("ReadDistribution: Missing TranscriptInfo.\n");
@@ -93,7 +107,8 @@ bool ReadDistribution::init(TranscriptInfo* trI, TranscriptSequence* trS, Transc
    }
    return true;
 }//}}}
-bool ReadDistribution::initUniform(TranscriptInfo* trI, TranscriptSequence* trS, bool verb){ //{{{
+bool ReadDistribution::initUniform(long m, TranscriptInfo* trI, TranscriptSequence* trS, bool verb){ //{{{
+   M = m;
    verbose = verb;
    if(trI==NULL){
       error("ReadDistribution: Missing TranscriptInfo.\n");
@@ -109,6 +124,9 @@ bool ReadDistribution::initUniform(TranscriptInfo* trI, TranscriptSequence* trS,
    fragSeen = 0;
    return true;
 }//}}}
+void ReadDistribution::setLowProbMismatches(long m){//{{{
+   lowProbMismatches = m>1 ? m:1;
+}//}}}
 void ReadDistribution::setLength(double mu, double sigma){ //{{{
    lMu=mu;
    lSigma=sigma;
@@ -117,7 +135,14 @@ void ReadDistribution::setLength(double mu, double sigma){ //{{{
 void ReadDistribution::observed(fragmentP frag){ //{{{
    DEBUG(message("%s===%s\n",bam1_qname(frag->first),bam1_qname(frag->second));)
    long tid = frag->first->core.tid;
-   if((tid == -1)||((frag->paired)&&(tid!=frag->second->core.tid))) return;
+   if((frag->paired)&&(tid!=frag->second->core.tid)){
+      warnTIDmismatch++;
+      return;
+   }
+   if((tid < 0)||(tid>=M)){
+      warnUnknownTID++;
+      return;
+   }
    // Set inverse expression
    double Iexp = (gotExpression)? 1.0/trExp->exp(tid) : 1.0;
    // Calculate reads' true end position:
@@ -150,16 +175,13 @@ void ReadDistribution::observed(fragmentP frag){ //{{{
 
    // check mates relative position: {{{
    if((frag->paired) && (frag->first->core.pos > frag->second->core.pos)){
-      if(verbose)message("NOTE: ReadDistribution: SAM - first mate from a pair was downstream.\n");
+      noteFirstMateDown ++;
       bam1_t *tmp = frag->second;
       frag->second = frag->first;
       frag->first = tmp;
    }
    if((frag->paired) && (frag->first->core.flag & BAM_FREVERSE)){
-      if(warnPos){
-         warning("ReadDistribution: Upstream mate from a pair has to align to the sense strand of transcript.\n");
-         warnPos=false;
-      }
+      warnPos ++;
       return;
    }//}}}
    // positional bias:
@@ -325,10 +347,9 @@ void ReadDistribution::logProfiles(string logFileName){//{{{
    }
    outF.close();
 }//}}}
-pair<double,double> ReadDistribution::getSequenceProb(bam1_t *samA){//{{{
-   if(! samA) return pair<double, double>(1,1);
-   //return pair<double, double>(1,0.00000001);
-   double prob=1,lowProb=1,probMis;
+pair<double,double> ReadDistribution::getSequenceLProb(bam1_t *samA){//{{{
+   if(! samA) return pair<double, double>(0,0);
+   double lProb=0,lowLProb=0,lProbMis;
    bam1_core_t *samC = &samA->core;
    uint8_t *qualP=bam1_qual(samA);
    long i,j,misses,len=samC->l_qseq;
@@ -394,40 +415,45 @@ pair<double,double> ReadDistribution::getSequenceProb(bam1_t *samA){//{{{
          case BAM_CEQUAL:
          case BAM_CDIFF:*/
       }
-      probMis = pow((double)10.0,((double) qualP[j])/-10.0 );
+      lProbMis = (((double) qualP[j])/-10.0) * log(10.0);
          
       if((base2int(seq[i]) == -1)||(base2int(seq[i]) != bamBase2int(bam1_seqi(bam1_seq(samA),j)))){
-         prob *= probMis;
-         lowProb *= probMis;
+         // If bases don't match, multiply probability by probability of error.
+         lProb += lProbMis;
+         lowLProb += lProbMis;
       }else{
-         prob *= 1 - probMis;
+         // If bases do match, multiple probability by inverse of probability of error.
+         double lProbHit = log1p(-exp(lProbMis));
+         lProb += lProbHit;
          if(misses>0){
-            lowProb *= probMis;
+            // If there are some misses left add a 'miss' to the 'low probability'.
+            lowLProb += lProbMis;
             misses--;
          }else{
-            lowProb *= 1.0 - probMis;
+            lowLProb += lProbHit;
          }
       }
       i--;
       j--;
    }
-   return pair<double, double>(prob,lowProb);
+   return pair<double, double>(lProb,lowLProb);
 }//}}}
-void ReadDistribution::getP(fragmentP frag,double &prob,double &probNoise){ //{{{
-   double P = 1;
-   prob = 0;
-   probNoise = 0;
-   pair<double, double> pSeq1,pSeq2;
+bool ReadDistribution::getP(fragmentP frag,double &lProb,double &lProbNoise){ //{{{
+   double lP = 0;
+   lProb = ns_misc::LOG_ZERO;
+   lProbNoise = ns_misc::LOG_ZERO;
+   pair<double, double> lpSeq1,lpSeq2;
    // Get probability based on base mismatches: {{{
-   pSeq1 = getSequenceProb(frag->first);
-   pSeq2 = getSequenceProb(frag->second);
+   lpSeq1 = getSequenceLProb(frag->first);
+   lpSeq2 = getSequenceLProb(frag->second);
    long tid = frag->first->core.tid;
-   if((tid==-1)||((frag->paired)&&(frag->second->core.tid != tid))){
-      if(warnTIDmismatch){
-         warning("ReadDistribution: Read pair fragments are aligned to different transcripts.\n");
-         warnTIDmismatch=false;
-      }
-      return;
+   if((frag->paired)&&(tid!=frag->second->core.tid)){
+      warnTIDmismatch++;
+      return false;
+   }
+   if((tid < 0)||(tid>=M)){
+      warnUnknownTID++;
+      return false;
    }
    // Calculate reads' true end position:
    long frag_first_endPos, frag_second_endPos=0;
@@ -445,57 +471,62 @@ void ReadDistribution::getP(fragmentP frag,double &prob,double &probNoise){ //{{
          len = frag_first_endPos - frag->second->core.pos;
       }
       // compute length probability and normalize by probability of all possible lengths (cdf):
-      if(validLength) P *= getLengthP(len) / getLengthNorm(trLen);
+      // P*=lengthP/lengthNorm
+      if(validLength) lP += getLengthLP(len) - getLengthLNorm(trLen);
       // }}}
    }else{
       len = frag_first_endPos - frag->first->core.pos;
    }
    if(uniform){
       // Get probability of position for uniform distribution
-      P *= 1./(trLen-len+1);
+      // P*=1/(trLen-len+1)
+      lP -= log(trLen-len+1);
    }else{ // Positional & Sequence bias {{{
       // Get probability of position given read bias model
       // check mates' relative position:
       if( frag->paired && (frag->first->core.pos > frag->second->core.pos)){
+         noteFirstMateDown ++;
          bam1_t *tmp = frag->second;
          frag->second = frag->first;
          frag->first = tmp;
       }
       // check strand of the first read:
       if(frag->paired && (frag->first->core.flag & BAM_FREVERSE)){
-         if(warnPos){
-            warning("ReadDistribution: Upstream mate from a pair has to align to the sense strand of transcript.\n");
-            warnPos=false;
-         }
-         return;
+         warnPos++;
+         return false;
       }
       if(!frag->paired){
          if(frag->first->core.flag & BAM_FREVERSE){
-            P *= getPosBias(frag_first_endPos, mate_5, tid) *
-               getSeqBias(frag_first_endPos, mate_5, tid ) /
-               getWeightNorm( (long) len, mate_5, tid);
+            // P*=posBias5'*seqBias5'/weightNorm5'
+            lP += log(getPosBias(frag_first_endPos, mate_5, tid)) +
+               log(getSeqBias(frag_first_endPos, mate_5, tid )) -
+               log(getWeightNorm( (long) len, mate_5, tid));
          }else{
-            P *= getPosBias(frag->first->core.pos , mate_3, tid) *
-               getSeqBias(frag->first->core.pos , mate_3, tid ) /
-               getWeightNorm( (long) len, mate_3, tid);
+            // P*=posBias3'*seqBias3'/weightNorm3'
+            lP += log(getPosBias(frag->first->core.pos , mate_3, tid)) +
+               log(getSeqBias(frag->first->core.pos , mate_3, tid )) -
+               log(getWeightNorm( (long) len, mate_3, tid));
          }
       }else{
 //#pragma omp parallel sections num_threads (2) reduction(*:P)
 //{
 //   #pragma omp section
-         P *= 1.0/getWeightNorm( (long) len, FullPair, tid);
+         // P*=1/weightNormFull
+         lP -= log(getWeightNorm( (long) len, FullPair, tid));
 //   #pragma omp section
 //   {
-         P *= getPosBias(frag_second_endPos, mate_5, tid)
-          * getPosBias(frag->first->core.pos , mate_3, tid)
-          * getSeqBias(frag_second_endPos, mate_5, tid )
-          * getSeqBias(frag->first->core.pos , mate_3, tid ); 
+         // P*=posBias5'*posBias3'*seqBias5'*seqBias3'
+         lP += log(getPosBias(frag_second_endPos, mate_5, tid))
+          + log(getPosBias(frag->first->core.pos , mate_3, tid))
+          + log(getSeqBias(frag_second_endPos, mate_5, tid ))
+          + log(getSeqBias(frag->first->core.pos , mate_3, tid )); 
 //   }
 //}
       }
    } //}}}
-   prob = P * pSeq1.first*pSeq2.first;
-   probNoise = P * pSeq1.second*pSeq2.second;
+   lProb = lP + lpSeq1.first+lpSeq2.first;
+   lProbNoise = lP + lpSeq1.second+lpSeq2.second;
+   return true;
 }//}}}
 void ReadDistribution::updatePosBias(long pos, biasT bias, long tid, double Iexp){ //{{{
    if((bias==readM_5)||(bias==uniformM_5))pos--;
@@ -601,26 +632,32 @@ double ReadDistribution::getWeightNorm(long len, readT read, long tid){ //{{{
    }
    return weightNorms[read][tid][len];
 }//}}}
-double ReadDistribution::getLengthP(double len){//{{{
-   return 1./(len*lSigma*2.5066282746)*exp(-pow(log(len) - lMu, (double)2.0)/(2 * pow(lSigma, (double)2)));
+double ReadDistribution::getLengthLP(double len){//{{{
+   //return 1./(len*lSigma*sqrt_2_pi)*exp(-pow(log(len) - lMu, (double)2.0)/(2 * pow(lSigma, (double)2)));
+   const double log_sqrt_2_pi = .918938533192; // log(sqrt(2*pi))
+   const double lLen = log(len);
+   return - (lLen + 
+             log(lSigma) + 
+             log_sqrt_2_pi + 
+             pow( (lLen - lMu) / lSigma, 2.0) / 2.0 );
 }//}}}
-double ReadDistribution::getLengthNorm(double trLen){//{{{
+double ReadDistribution::getLengthLNorm(double trLen){//{{{
    // erfc needs compiler with C99 standard 
    // other option might be to use boost/math/special_functions/erf.hpp
-   return 0.5*erfc(-(log(trLen)-lMu)/(lSigma*1.41421356237309));
+   return log(0.5)+log(erfc(-(log(trLen)-lMu)/(lSigma*1.41421356237309)));
 }//}}}
 vector<double> ReadDistribution::getEffectiveLengths(){ //{{{
    vector<double> effL(M,0);
    long m,len,trLen,pos;
-   double eL, cdfNorm,lenP, wNorm;
+   double eL, lCdfNorm,lenP, wNorm;
    MyTimer timer;
    timer.start();
-#pragma omp parallel for private(len,trLen,pos,eL,lenP,wNorm,cdfNorm)
+#pragma omp parallel for private(len,trLen,pos,eL,lenP,wNorm,lCdfNorm)
    for(m=0;m<M;m++){
       if(verbose && (m!=0) && (m%(M/10)==0)){
 #pragma omp critical
          {
-            message("# %ld done.\n",m);
+            message("# %ld done. ",m);
             timer.current();
          }
       }
@@ -631,12 +668,12 @@ vector<double> ReadDistribution::getEffectiveLengths(){ //{{{
          else effL[m] = trLen;
          continue;
       }
-      cdfNorm = getLengthNorm(trLen);
+      lCdfNorm = getLengthLNorm(trLen);
 // always computing the effective length using fragLen only
       if(uniform){
          eL = 0;
          for(len=1;len<=trLen;len++){
-            eL += getLengthP(len)/cdfNorm * (trLen-len);
+            eL += exp(getLengthLP(len)-lCdfNorm) * (trLen-len);
          }
          // dont go below minimal fragment length
          effL[m] = eL>minFragLen?eL:trLen;
@@ -653,7 +690,7 @@ vector<double> ReadDistribution::getEffectiveLengths(){ //{{{
             for(pos=0;pos <= trLen - len;pos++){
                wNorm += posBias3[pos] * posBias5[pos+len-1];
             }
-            lenP = getLengthP( len ) / cdfNorm;
+            lenP = exp(getLengthLP( len ) - lCdfNorm);
             //if(m==0)message("   %ld  %lf   %lf\n",len,lenP,wNorm);
             eL += lenP * wNorm;
          }
@@ -786,7 +823,7 @@ double VlmmNode::getP(char b, char bp, char bpp) {//{{{
                   if((base2int(bp) == j) || (base2int(bp) == -1))
                      prob += probs[pows4[2]*i + pows4[1]*j+ k];
       }else if(parentsN==1){
-         // there was a an unknown => we know that parent is unknown
+         // there was an unknown => we know that parent is unknown
          k = base2int(b);
          for(j=0;j<4;j++)
             prob += probs[pows4[1]*j+ k];
