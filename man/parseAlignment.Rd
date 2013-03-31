@@ -6,19 +6,20 @@
 }
 \usage{
 parseAlignment( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL, 
-      expressionFile=NULL, readsN=NULL, uniform=TRUE, lenMu=NULL, lenSigma=NULL, 
-      verbose=NULL, veryVerbose=NULL, procN=NULL, pretend=FALSE)
+      expressionFile=NULL, readsN=NULL, uniform=TRUE, limitA=NULL, lenMu=NULL,
+      lenSigma=NULL, verbose=NULL, veryVerbose=NULL, procN=NULL, pretend=FALSE)
 }
 \arguments{
 \item{alignFile}{File containing read alignments.}
 \item{outFile}{Name of the output file.}
-\item{inputFormat}{Input format: possible values \code{SAM}, \code{BAM}.}
+\item{inputFormat}{Input format: possible values \code{SAM}, \code{BAM}. (This should be detected automatically in most cases.}
 \item{trInfoFile}{If transcript reference sequence information is contained within SAM file, program will write this information into <trInfoFile>, otherwise it will look for this information in the <trInfoFile>.}
 \item{trSeqFile}{File containing transcript sequence in FASTA format.}
 \item{expressionFile}{Transcript relative expression estimates --- for better non-uniform read distribution estimation.}
 \item{readsN}{Total number of reads. This is usually not necessary if SAM/BAM contains also reads with no valid alignments.}
 %\item{failed}{File name where to save names of reads that failed to align as pair.}
 \item{uniform}{Use uniform read distribution.}
+\item{limitA}{Limit maximum number of alignments per read. Reads with more alignments than limit will be discarded.}
 \item{lenMu}{Set mean of log fragment length distribution. \eqn{l_{frag} \sim LogNormal(\mu,\sigma^2)}{l_frag ~ LogNormal(mu,sigma^2)}}
 \item{lenSigma}{Set \eqn{\sigma^2}{sigma^2} (or variance) of log fragment length distribution. \eqn{l_{frag} \sim LogNormal(\mu,\sigma^2)}{l_frag ~ LogNormal(mu,sigma^2)}}
 %\item{distributionFile}{Name of file to which read-distribution should be saved.}

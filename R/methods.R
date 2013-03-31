@@ -61,7 +61,7 @@ getDE <- function( conditions, outPrefix=NULL, samples=FALSE, trInfoFile=NULL, n
 }
 
 ## compute transcript expression
-getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM", log=FALSE, pretend=FALSE, ... ){
+getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM", log=FALSE, limitA=NULL, seed=NULL, pretend=FALSE, ... ){
    if(pretend && is.null(outPrefix)){
       message("In case of no outPrefix provided this function uses R temporary directories which are only valid during the current session.")
       stop("Please provide outPrefix when using the pretend option.")
@@ -81,23 +81,26 @@ getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, ty
    ## check arguments that will be passed to estimateExpression later:
    .argCheck.eE(probF, outPrefix, outputType=type, trInfoFile=trF, ... );
 
-   iFormat <- switch(.getExt(alignFile),bam="BAM",BAM="BAM","SAM");
    if(! uniform){
       probUF <- paste(outPrefix,"-U",".prob",sep="");
       trUF <- paste(outPrefix,"-U",".tr",sep="");
       message("## Pre-Computing alignment probabilities with uniform read distribution.");
-      parseAlignment(alignFile, probUF, trSeqFile, trInfoFile=trUF, inputFormat=iFormat, uniform=FALSE,pretend=pretend);
+      parseAlignment(alignFile, probUF, trSeqFile, trInfoFile=trUF, uniform=FALSE, limitA=limitA, pretend=pretend);
       message("## Pre-Computing expression with uniform read distribution.");
-      estimateExpression(probUF, paste(outPrefix,"-U",sep=""), outputType="theta", trInfoFile=trUF, MCMC_burnIn=1000, MCMC_samplesN=1000, MCMC_samplesSave=10, MCMC_chainsN=2, pretend=pretend);
+      if (!is.null(seed)) {
+         # Use different seed for initial sampling.
+         seed <- seed + 17;
+      }
+      estimateExpression(probUF, paste(outPrefix,"-U",sep=""), outputType="theta", trInfoFile=trUF, seed=seed, MCMC_burnIn=1000, MCMC_samplesN=1000, MCMC_samplesSave=10, MCMC_chainsN=2, pretend=pretend);
       exprFile <- paste(outPrefix,"-U",".thetaMeans",sep=""); 
    }else{
       exprFile <- NULL;
    }
    
    message("## Computing alignment probabilities.");
-   parseAlignment(alignFile, probF, trSeqFile, trInfoFile=trF, inputFormat=iFormat, uniform=uniform, expressionFile=exprFile,pretend=pretend);
+   parseAlignment(alignFile, probF, trSeqFile, trInfoFile=trF, uniform=uniform, limitA=limitA, expressionFile=exprFile,pretend=pretend);
    message("## Estimating transcript expression levels.");
-   estimateExpression(probF, outPrefix, outputType=type, trInfoFile=trF, pretend=pretend, ... );
+   estimateExpression(probF, outPrefix, outputType=type, trInfoFile=trF, seed=seed, pretend=pretend, ... );
    message("## Computing means.");
    if(type=="RPKM")type<-"rpkm";
    outFile <- paste(outPrefix, type, sep=".");

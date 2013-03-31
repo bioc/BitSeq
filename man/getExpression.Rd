@@ -6,7 +6,7 @@ Estimate expression of transcripts. Starting from alignment and reference files 
 }
 \usage{
 getExpression(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM", 
-      log=FALSE, pretend=FALSE, ... )
+      log=FALSE, limitA=NULL, seed=NULL, pretend=FALSE, ... )
 }
 \arguments{
 \item{alignFile}{File containing read alignments.}
@@ -15,6 +15,8 @@ getExpression(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM",
 \item{uniform}{Use uniform read distribution.}
 \item{type}{Output type, possible values: \code{theta}, \code{RPKM}, \code{counts}, \code{tau}.}
 \item{log}{Report mean and expression of logged expression samples.}
+\item{limitA}{Limit maximum number of alignments per read. Reads with more alignments than limit will be discarded.}
+\item{seed}{Sets the initial random seed for repeatable experiments.}
 \item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 \item{...}{Other arguments are passed to \code{estimateExpression}, please see \code{\link{estimateExpression}}} for more details
 }
