@@ -1,22 +1,29 @@
-## load transcript names (and information) into 
-loadTranscriptNames <- function(fileName){
+## load transcript names (and information) into result
+tri.load <- function(fileName){
    if(is.null(fileName) || (!file.exists(fileName)))stop("Please provide valid file name.");
-   trNames <- read.table(fileName, sep=" ");
+   trNames <- read.table(fileName, sep=" ", as.is=c(1,2));
+
    ## omit last column if its NA
    if(is.na(trNames[1,dim(trNames)[2]])){
-      return( IRanges::DataFrame(trNames[,1:dim(trNames)[2]-1]));
+      ret <- IRanges::DataFrame(trNames[,1:dim(trNames)[2]-1]);
    }else{
-      return( IRanges::DataFrame(trNames));
+      ret <- IRanges::DataFrame(trNames);
    }
+   ## set column names
+   if(dim(ret)[2] == 3){
+      colnames(ret) <- c("gene", "transcript", "length");
+   }else{
+      colnames(ret) <- c("gene", "transcript", "length", "adjusted length");
+   }
+   return(ret);
 }
 
-## check whether transcript info file has gene names set
-hasGeneNames <- function(filename){
-   trInfo <- loadTranscriptNames(filename);
+## check whether transcript info has gene names set
+tri.hasGeneNames <- function(trInfo){
    if(is.null(trInfo))return(FALSE);
    geneN <- unique(trInfo[,1]);
    if(length(geneN) == 1){
-      warning("There seems to be just one gene name.");
+      warning("There seems to be just one gene.");
       return(FALSE);
    }
    if(length(geneN) == length(trInfo[,1])){
@@ -26,19 +33,22 @@ hasGeneNames <- function(filename){
    return(TRUE);
 }
 
-## set gene names in transcript info file
-setGeneNames <- function(filename, geneNames, transcriptNames=NULL){
-   trInfo <- loadTranscriptNames(filename);
+## check whether transcript info file has gene names set
+tri.file.hasGeneNames <- function(filename){
+   trInfo <- tri.load(filename);
+   return(tri.hasGeneNames(trInfo));
+}
+
+## update DataFrame containing transcript info with gene names
+tri.setGeneNames <- function(trInfo, geneNames, transcriptNames=NULL){
+   stopifnot( is(trInfo,"DataFrame"));
    if(dim(trInfo)[1] != length(geneNames)){
       stop("Number of gene names does not match number of transcripts.\n Please provide one gene name per transcript");
    }
    if(is.null(transcriptNames)){
       for(i in 1:length(geneNames)){
-         print(trInfo[i,]);
          trInfo[i,1] <- geneNames[i];
-         print(trInfo[i,]);
       }
-      saveTranscriptInfo(trInfo, filename);
    }else{
       if(length(geneNames) != length(transcriptNames)){
          stop("Number of gene names does not match number of transcript names.\n Please provide one gene name per transcript name.");
@@ -53,18 +63,23 @@ setGeneNames <- function(filename, geneNames, transcriptNames=NULL){
             warning(paste("Multiple gene names for transcript",trInfo[i,2]));
             errorN <- errorN+1;
          }else {
-            message(sprintf("INDEX %d\n",ind));
             trInfo[i,1] <- geneNames[ind];
          }
          if(errorN>4)stop("Too many errors.");
       }
-      saveTranscriptInfo(trInfo, filename);
    }
+   return(trInfo);
+}
+
+## set gene names in transcript info file
+tri.file.setGeneNames <- function(filename, geneNames, transcriptNames=NULL){
+   trInfo <- tri.load(filename);
+   trInfo <- tri.setGeneNames(trInfo, geneNames, transcriptNames);
+   tri.save(trInfo, filename);
 }
 
 ## Save transcript information data from DataFrame into file.
-saveTranscriptInfo <- function(trInfo, filename){
-   print("====");
+tri.save <- function(trInfo, filename){
    stopifnot( is(trInfo,"DataFrame"));
    if(file.exists(filename)){
       file.remove(filename);
@@ -72,16 +87,6 @@ saveTranscriptInfo <- function(trInfo, filename){
    header <- sprintf("# M %i",dim(trInfo)[1]);
    outF <- file(filename, "w");
    writeLines(header,outF);
-   message("lines");
-   for(i in 1:dim(trInfo)[1]){
-      if(length(trInfo[i,])==3){
-   message("line");
-         line <- sprintf("%s %s %i",trInfo[i,1], trInfo[i,2], trInfo[i,3]);
-      }else{
-         line <- sprintf("%s %s %i %f",trInfo[i,1], trInfo[i,2], trInfo[i,3], trInfo[i,4]);
-      }
-      writeLines(line, outF);
-   }
+   write.table(IRanges::as.data.frame(trInfo), outF, quote=FALSE, row.names=FALSE, col.names=FALSE);
    close(outF);
-   ##write.table(as.data.frame(trInfo),filename,append=TRUE,row.names=FALSE,col.names=FALSE);
 }
