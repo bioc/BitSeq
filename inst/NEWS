@@ -1,3 +1,10 @@
+CHANGES IN VERSION 1.3.11 (2013-04-02)
+-------------------------------------
+NEW FEATURES
+  o new functions for handling transcript information
+
+  o getExpression returns also counts and transcript information
+
 CHANGES IN VERSION 1.3.10 (2013-03-30)
 -------------------------------------
 NEW FEATURES
@@ -39,6 +46,7 @@ CHANGES IN VERSION 1.2.0 (2012-09-27)
   o estimateExpression has a new convergence criterion which should result in
     producing fewer samples. It is faster and avoids the use of
     MCMC_scaleReduction and MCMC_samplesNmax flags.
+
   o estimateExpressionLegacy uses the original convergence criterion
 
   o library normalization option for getDE, estimateDE, estimateHyperPar,

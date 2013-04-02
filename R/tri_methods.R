@@ -1,7 +1,7 @@
 ## load transcript names (and information) into result
-tri.load <- function(fileName){
-   if(is.null(fileName) || (!file.exists(fileName)))stop("Please provide valid file name.");
-   trNames <- read.table(fileName, sep=" ", as.is=c(1,2));
+tri.load <- function(trInfoFile){
+   if(is.null(trInfoFile) || (!file.exists(trInfoFile)))stop("Please provide valid file name.");
+   trNames <- read.table(trInfoFile, sep=" ", as.is=c(1,2));
 
    ## omit last column if its NA
    if(is.na(trNames[1,dim(trNames)[2]])){
@@ -33,12 +33,6 @@ tri.hasGeneNames <- function(trInfo){
    return(TRUE);
 }
 
-## check whether transcript info file has gene names set
-tri.file.hasGeneNames <- function(filename){
-   trInfo <- tri.load(filename);
-   return(tri.hasGeneNames(trInfo));
-}
-
 ## update DataFrame containing transcript info with gene names
 tri.setGeneNames <- function(trInfo, geneNames, transcriptNames=NULL){
    stopifnot( is(trInfo,"DataFrame"));
@@ -65,28 +59,34 @@ tri.setGeneNames <- function(trInfo, geneNames, transcriptNames=NULL){
          }else {
             trInfo[i,1] <- geneNames[ind];
          }
-         if(errorN>4)stop("Too many errors.");
+         if(errorN>4)stop("Too many errors, updating gene names failed.");
       }
    }
    return(trInfo);
 }
 
-## set gene names in transcript info file
-tri.file.setGeneNames <- function(filename, geneNames, transcriptNames=NULL){
-   trInfo <- tri.load(filename);
-   trInfo <- tri.setGeneNames(trInfo, geneNames, transcriptNames);
-   tri.save(trInfo, filename);
-}
-
 ## Save transcript information data from DataFrame into file.
-tri.save <- function(trInfo, filename){
+tri.save <- function(trInfo, trInfoFile){
    stopifnot( is(trInfo,"DataFrame"));
-   if(file.exists(filename)){
-      file.remove(filename);
+   if(file.exists(trInfoFile)){
+      file.remove(trInfoFile);
    }
    header <- sprintf("# M %i",dim(trInfo)[1]);
-   outF <- file(filename, "w");
+   outF <- file(trInfoFile, "w");
    writeLines(header,outF);
    write.table(IRanges::as.data.frame(trInfo), outF, quote=FALSE, row.names=FALSE, col.names=FALSE);
    close(outF);
+}
+
+## check whether transcript info file has gene names set
+tri.file.hasGeneNames <- function(trInfoFile){
+   trInfo <- tri.load(trInfoFile);
+   return(tri.hasGeneNames(trInfo));
+}
+
+## set gene names in transcript info file
+tri.file.setGeneNames <- function(trInfoFile, geneNames, transcriptNames=NULL){
+   trInfo <- tri.load(trInfoFile);
+   trInfo <- tri.setGeneNames(trInfo, geneNames, transcriptNames);
+   tri.save(trInfo, trInfoFile);
 }

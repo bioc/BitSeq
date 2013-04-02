@@ -24,11 +24,15 @@ getExpression(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM",
 This function uses \code{parseAlignment} function to compute alignment probabilities and the function \code{estimateExpression} to produce the expression samples.
 
 In case of non-uniform read distribution, it first produces approximate estimates of expression using uniform distribution and uses these estimates in to compute read distribution bias-corrected alignment probabilities, which are used in the \code{estimateExpression} function to produce expression estimates.
+
+The order of transcripts in the results is always the same as in the alignment file. The transcripts can be indetified by names stored in the \code{trInfo} part of the result.
 }
 \value{
 \code{list} with items:
 \item{exp}{\code{DataFrame} with transcript expression mean and standard deviation}
 \item{fn}{name of the file containing all the expression samples}
+\item{counts}{vector of estimated read counts per transcript}
+\item{trInfo}{\code{DataFrame} with transcript information, contains: transcript name, possibly gene name, transcript length, and adjusted transcript length}
 }
 \author{Peter Glaus}
 

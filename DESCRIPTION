@@ -6,8 +6,8 @@ LinkingTo: Rsamtools, zlibbioc
 Suggests: edgeR, DESeq
 Title: Transcript expression inference and differential expression
         analysis for RNA-seq data
-Version: 1.3.10
-Date: 2013-03-30
+Version: 1.3.11
+Date: 2013-04-02
 Author: Peter Glaus, Antti Honkela and Magnus Rattray
 Maintainer: Peter Glaus <glaus@cs.man.ac.uk>
 Description: The BitSeq package is targeted for transcript expression analysis and differential expression analysis of RNA-seq data in two stage process. In the first stage it uses Bayesian inference methodology to infer expression of individual transcripts from individual RNA-seq experiments. The second stage of BitSeq embraces the differential expression analysis of transcript expression. Providing expression estimates from replicates of multiple conditions, Log-Normal model of the estimates is used for inferring the condition mean transcript expression and ranking the transcripts based on the likelihood of differential expression.

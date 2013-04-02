@@ -20,8 +20,8 @@ estimateHyperPar( outFile, conditions=NULL, paramsInFile=NULL,
 Advanced options:
 \item{force}{Force smoothing hyperparameters, otherwise program might not produce parameters file at the end.}
 \item{lambda0}{Model parameter lambda0.}
-\item{lowess\_f}{Parameter F for lowess smoothing specifying amount of smoothing.}
-\item{lowess\_steps}{Parameter Nsteps for lowess smoothing specifying number of iterations.}
+\item{lowess_f}{Parameter F for lowess smoothing specifying amount of smoothing.}
+\item{lowess_steps}{Parameter Nsteps for lowess smoothing specifying number of iterations.}
 \item{veryVerbose}{More verbose output.}
 \item{norm}{Vector of (multiplicative) normalization constants for library size normalization of expression samples. Number of constants has to match the number of expression samples files.} 
 \item{seed}{Sets the initial random seed for repeatable experiments.}
@@ -48,4 +48,4 @@ estimateHyperPar( conditions=list(cond1Files, cond2Files), outFile="data.par",
 estimateHyperPar( outFile="data.par", paramsInFile="data.ALLpar", smoothOnly=TRUE )
 }}
 
-\keyword{DE model hyperparameters}
+\keyword{differential expression}

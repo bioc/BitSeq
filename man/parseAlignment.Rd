@@ -44,4 +44,4 @@ parseAlignment(alignFile="data.sam", outFile="data.prob",
       trSeqFile="trReference.fa" ,trInfoFile="data.tr")
 }}
 
-\keyword{alignment probability }
+\keyword{transcript expression}

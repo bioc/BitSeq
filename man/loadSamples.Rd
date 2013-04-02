@@ -29,4 +29,4 @@ samples1<-loadSamples("data-c0b1.rpkm")
 writeSamples(samples1,"new-c0b1.rpkm")
 }}
 
-\keyword{expression samples}
+\keyword{transcript expression}

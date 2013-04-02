@@ -39,7 +39,7 @@ Providing expression estimates from replicates of multiple conditions, Log-Norma
 
 \section{Citing \bitseq{}}
 
-The \bitseq{} package is based on probabilistic models and inference methods described in the manuscript \cite{paperArxiv}.
+The \bitseq{} package is based on probabilistic models and inference methods described in the manuscript \cite{paper}.
 For citing \bitseq{} in publications please refer to the manuscript above and to the source of the software.
 
 
@@ -98,7 +98,9 @@ setwd(system.file("extdata",package="BitSeq"));
 
 To estimate expression we use the function \Rfunction{getExpression}, which takes as an input the SAM file with alignments as well as reference Fasta file that was used for the alignment.
 The function returns a \Robject{list} in which the first item \Rvar{exp} is a \Robject{DataFrame} with expression mean and standard deviation of each transcript.
-The second item \Rvar{fn} is a file name of a file containing all the expression samples, which are used in the later DE analysis.
+The second item \Rvar{fn} is a file name of a file containing all the expression samples, which are used in the later DE analysis. 
+The last two items are \Rvar{counts}, vector containing estimated read counts per transcript, and \Rvar{trInfo}, \Robject{DataFrame} with information about transcripts.
+
 The log option tells the function to return mean and standard deviation of logged samples and the last three options, which are parameters for the sampling algorithm, are passed to the \Rfunction{estimateExpression} function used for expression inference.
 <<>>=
 res1 <- getExpression("data-c0b0.sam",
@@ -297,7 +299,6 @@ This produces three extra files, the first two \FILE{data-C0.est}, \FILE{data-C1
 
 All major computation in \bitseq{} is executed by running \COMM{C++} libraries, and there is also a \COMM{C++} only implementation of \bitseq{} package available at \url{http://code.google.com/p/bitseq/}.
 The standalone package can be particularly useful for clusters without support for R or Bioconductor. 
-It also provides speedup for \Rfunction{estimateExpression} and \Rfunction{parseAlignment} functions on systems with multiple CPUs by using Open MP.
 
 In order to facilitate the use of \COMM{C++} version of the package, the relevant functions in R interface provide \Rvar{pretend} option.
 Using this option, the computation will not be executed, instead the function will print out one or more command line commands which can be directly used with the \COMM{C++} implementation.
@@ -321,7 +322,7 @@ setwd(old_directory);
 
 \begin{thebibliography}{10}
 
-\bibitem{paperArxiv}
+\bibitem{paper}
 Glaus, P., Honkela, A. and Rattray, M. (2012).
 \newblock Identifying differentially expressed transcripts from RNA-seq data with biological variation.
 \newblock {\em Bioinformatics\/}, {\bf 28}(13), 1721-1728.

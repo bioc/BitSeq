@@ -5,4 +5,4 @@ useDynLib("BitSeq")
 #exportPattern("^[^\\._]")
 export("parseAlignment","estimateExpression","estimateExpressionLegacy","getMeanVariance","estimateHyperPar","estimateDE","getGeneExpression","getWithinGeneExpression");
 export("getDE","getExpression","loadSamples","writeSamples");
-
+exportPattern("tri\\.*");
