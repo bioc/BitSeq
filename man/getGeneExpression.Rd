@@ -4,13 +4,14 @@
 \title{Calculate gene expression or relative within gene expression}
 \description{Calculate either gene expression or relative within gene expression using transcript expression samples and transcript information file.}
 \usage{
-getGeneExpression(sampleFile, outFile=NULL, trInfoFile=NULL, pretend=FALSE)
-getWithinGeneExpression(sampleFile, outFile=NULL, trInfoFile=NULL, pretend=FALSE)
+getGeneExpression(sampleFile, outFile=NULL, trInfo=NULL, trInfoFile=NULL, pretend=FALSE)
+getWithinGeneExpression(sampleFile, outFile=NULL, trInfo=NULL, trInfoFile=NULL, pretend=FALSE)
 }
 \arguments{
 \item{sampleFile}{File containing the transcript expression samples.}
 \item{outFile}{Name of the output file. If not used, function uses temporary file.}
-\item{trInfoFile}{Transcript information file. If not used, function tries file with same name and extension \code{tr}. The file has to contain valid gene transcript mapping, see detail below.}
+\item{trInfo}{\code{DataFrame} containing transcript information. Either \code{trInfo} or \code{trInfoFile} argument has to be provided. Otherwise function tries file with same name as \code{sampleFile} and extension \code{tr}. }
+\item{trInfoFile}{Transcript information file. Either \code{trInfo} or \code{trInfoFile} argument has to be provided. Otherwise function tries file with same name as \code{sampleFile} and extension \code{tr}.}
 \item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
 }
 \details{
@@ -18,7 +19,10 @@ The \code{getGeneExpression} function takes samples of transcript expression and
 
 The \code{getWithinGeneExpression} function takes samples of transcript expression and produces file with relative within gene expression samples for each transcript.
 
-Both function need valid transcript information file which contains gene transcript mapping. 
+Both function need valid transcript information which contains gene transcript mapping.
+This can be provided either via \code{DataFrame} \code{trInfo} or file named \code{trInfoFile}.
+
+In case of a file, it should be formatted in following manner.
 The first line should contain "# M <numberOfTranscripts>" and the following \code{numberOfTranscripts} lines have to contain "<geneName> <transcriptName> <transcriptLength>". 
 Example is provided in \code{extdata/ensSelect1.tr}. 
 Please note that the transcript information file automatically generated from alignment files are not sufficient because SAM/BAM files do not include gene names. 
@@ -29,11 +33,13 @@ Name of file containing the new expression samples.
 }
 \author{Peter Glaus}
 
-\seealso{\code{\link{getExpression}}}
+\seealso{\code{\link{getExpression}}, \code{\link{tri.load}}, \code{\link{tri.file.setGeneNames}}, \code{\link{tri.file.hasGeneNames}}}
 \examples{
 setwd(system.file("extdata",package="BitSeq"))
+## use transcript information as object
+trinfo <- tri.load("ensSelect1.tr")
 ## gene expression
-getGeneExpression("data-c0b1.rpkm", "data-c0b1-GE.rpkm", "ensSelect1.tr")
+getGeneExpression("data-c0b1.rpkm", "data-c0b1-GE.rpkm", trInfo=trinfo)
 gExpSamples <- loadSamples("data-c0b1-GE.rpkm")
 gExpMeans <- rowMeans(as.data.frame(gExpSamples))
 gExpMeans
