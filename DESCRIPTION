@@ -6,7 +6,7 @@ LinkingTo: Rsamtools, zlibbioc
 Suggests: edgeR, DESeq
 Title: Transcript expression inference and differential expression
         analysis for RNA-seq data
-Version: 1.4.0
+Version: 1.5.0
 Date: 2013-04-02
 Author: Peter Glaus, Antti Honkela and Magnus Rattray
 Maintainer: Peter Glaus <glaus@cs.man.ac.uk>
