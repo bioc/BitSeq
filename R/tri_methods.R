@@ -5,9 +5,9 @@ tri.load <- function(trInfoFile){
 
    ## omit last column if its NA
    if(is.na(trNames[1,dim(trNames)[2]])){
-      ret <- IRanges::DataFrame(trNames[,1:dim(trNames)[2]-1]);
+      ret <- DataFrame(trNames[,1:dim(trNames)[2]-1]);
    }else{
-      ret <- IRanges::DataFrame(trNames);
+      ret <- DataFrame(trNames);
    }
    ## set column names
    if(dim(ret)[2] == 3){
@@ -74,7 +74,7 @@ tri.save <- function(trInfo, trInfoFile){
    header <- sprintf("# M %i",dim(trInfo)[1]);
    outF <- file(trInfoFile, "w");
    writeLines(header,outF);
-   write.table(IRanges::as.data.frame(trInfo), outF, quote=FALSE, row.names=FALSE, col.names=FALSE);
+   write.table(as.data.frame(trInfo), outF, quote=FALSE, row.names=FALSE, col.names=FALSE);
    close(outF);
 }
 

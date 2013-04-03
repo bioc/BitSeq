@@ -14,9 +14,9 @@ loadSamples <- function(fileName, trInfoFile=NULL){
    data <- read.table(fileName, sep=" ");
    ## omit last column if its NA
    if(is.na(data[1,dim(data)[2]])){
-      return( IRanges::DataFrame(data[,1:dim(data)[2]-1], row.names=as.vector(trNames) ));
+      return( DataFrame(data[,1:dim(data)[2]-1], row.names=as.vector(trNames) ));
    }else{
-      return( IRanges::DataFrame(data, row.names=as.vector(trNames) ));
+      return( DataFrame(data, row.names=as.vector(trNames) ));
    }
 }
 
