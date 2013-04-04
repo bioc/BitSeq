@@ -14,11 +14,13 @@ double logAddExp(double a, double b){ //{{{
       return b+log1p(exp(a-b));
    }
 } //}}}
-double logSumExp(const vector<double> &vals, long n){ //{{{
-   if((n==-1)||(n>(long)vals.size())) n=vals.size();
-   double sumE = 0, m = *max_element(vals.begin(),vals.begin()+n);
-   for(long i=0;i<n;i++)
-      sumE += exp(vals[i]-m);
+double logSumExp(const vector<double> &vals, long st, long en){ //{{{
+   if(st<0)st = 0;
+   if((en == -1) || (en > (long)vals.size())) en = vals.size();
+   if(st >= en)return 0;
+   double sumE = 0, m = *max_element(vals.begin() + st,vals.begin() + en);
+   for(long i = st; i < en; i++)
+      sumE += exp(vals[i] - m);
    return  m + log(sumE);
 } //}}}
 } // namespace ns_math
@@ -90,7 +92,7 @@ bool getLog(const ArgumentParser &args){// {{{
 bool prepareInput(const ArgumentParser &args, TranscriptInfo *trInfo, PosteriorSamples *samples, long *M, long *N, long *G){// {{{
    if(! trInfo->readInfo(args.getS("trInfoFileName"))) return false;
    *G = trInfo->getG();
-   if((! samples->initSet(M,N,args.args()[0]))||(*M<=0)||(*N<=0)){//XXX
+   if((! samples->initSet(M,N,args.args()[0]))||(*M<=0)||(*N<=0)){
       error("Main: Failed loading MCMC samples.\n");
       return false;
    }
