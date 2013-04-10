@@ -1,5 +1,7 @@
 #include<cmath>
+#ifdef _OPENMP
 #include<omp.h>
+#endif
 
 #include "common.h"
 #include "misc.h"

@@ -4,7 +4,7 @@ SAM_INCLUDE=$(shell echo 'cat(system.file("usretc", .Platform[["r_arch"]], "Rsam
 
 include $(SAM_INCLUDE)
 
-PKG_CPPFLAGS+= -DBS_VERSION=\"1.3.9\" -DBIOC_BUILD  -I. 
+PKG_CPPFLAGS+= -DBS_VERSION=\"1.5.1\" -DBIOC_BUILD  -I. 
 
 include Makevars.common
 
