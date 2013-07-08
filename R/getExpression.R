@@ -57,7 +57,7 @@ getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, ty
       counts <- NULL;
    }else{
       means <- loadSamples( meanFile )
-      means[,1] <- sqrt(means[,1])
+      means[,2] <- sqrt(means[,2])
       colnames(means)<-c("mean","stdev");
       counts <- read.table(thetaMeansFile, sep=" ")[,3]
       trInfo <- tri.load(trF);

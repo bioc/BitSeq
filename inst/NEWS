@@ -4,8 +4,12 @@ BUG FIXES
   o fixed major bug in getGeneExpression and getWithinGeneExpression that
     caused wrong results for some genes if transcripts were not grouped by 
     genes
+
   o fixed bug in parseAlignment which would occasionally cause underflow in
     effective length computation
+
+  o fixed taking square root of wrong column in getExpression result's $means
+    field
 
 NEW FEATURES
   o much faster parseAlignment computation
