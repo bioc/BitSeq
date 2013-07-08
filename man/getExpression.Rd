@@ -18,7 +18,7 @@ getExpression(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM",
 \item{limitA}{Limit maximum number of alignments per read. Reads with more alignments than limit will be discarded.}
 \item{seed}{Sets the initial random seed for repeatable experiments.}
 \item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
-\item{...}{Other arguments are passed to \code{estimateExpression}, please see \code{\link{estimateExpression}}} for more details
+\item{...}{Other arguments are passed to \code{estimateExpression}, please see \code{\link{estimateExpression}} for more details}
 }
 \details{
 This function uses \code{parseAlignment} function to compute alignment probabilities and the function \code{estimateExpression} to produce the expression samples.

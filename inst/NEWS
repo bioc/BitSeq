@@ -1,3 +1,20 @@
+CHANGES IN VERSION 1.4.3  (2013-07-08)
+-------------------------------------
+BUG FIXES
+  o fixed major bug in getGeneExpression and getWithinGeneExpression that
+    caused wrong results for some genes if transcripts were not grouped by 
+    genes
+  o fixed bug in parseAlignment which would occasionally cause underflow in
+    effective length computation
+
+NEW FEATURES
+  o much faster parseAlignment computation
+
+  o improved precision in getGeneExpression and getWithinGeneExpression
+
+  o getWithinGeneExpression provides option to keep transcripts in original
+    order even if they are not grouped by genes
+
 CHANGES IN VERSION 1.3.11 (2013-04-02)
 -------------------------------------
 NEW FEATURES

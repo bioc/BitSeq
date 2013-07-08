@@ -29,7 +29,8 @@ Variance of two experiments (i.e. technical or biological replicates) can be est
 \examples{
 setwd(system.file("extdata",package="BitSeq"));
 sampleFileNames = c("data-c1b0.rpkm","data-c1b1.rpkm")
-getMeanVariance(sampleFiles=sampleFileNames, outFile="data-c1.Lmean", log=1, norm=c(1.0017, 0.9998))
+getMeanVariance(sampleFiles=sampleFileNames, outFile="data-c1.Lmean", log=1,
+      norm=c(1.0017, 0.9998))
 }
 
 \keyword{expression mean}

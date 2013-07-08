@@ -1,5 +1,5 @@
 
-getWithinGeneExpression <- function(sampleFile, outFile=NULL, trInfo=NULL, trInfoFile=NULL, pretend=FALSE){
+getWithinGeneExpression <- function(sampleFile, outFile=NULL, trInfo=NULL, trInfoFile=NULL, pretend=FALSE, keepOrder=FALSE){
    if(!is.null(trInfo)){
       if(!tri.hasGeneNames(trInfo))stop("The trInfo object does not contain necessary information.");
       trInfoFile <- tempfile("data",fileext=c(".tr"));
@@ -26,6 +26,9 @@ getWithinGeneExpression <- function(sampleFile, outFile=NULL, trInfo=NULL, trInf
       }
    }
    args <- c('getWithinGeneExpression', sampleFile, '--outFile', outFile, '--trInfoFile', trInfoFile);
+   if(!keepOrder){
+      args <- c(args, '--groupByGene')
+   }
 
    if(pretend){
       writeLines(.specialPaste(args))
