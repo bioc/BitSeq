@@ -748,13 +748,12 @@ vector<double> ReadDistribution::getEffectiveLengths(){ //{{{
    long m,len,trLen,pos;
    double eL, lCdfNorm,lenP, wNorm;
    string trRS;
-   vector<double> posBias5,posBias3;
    MyTimer timer;
    timer.start();
    DEBUG(message("Eff length: validLength %d ; minFragLen: %ld.\n",(int)validLength,minFragLen));
    #pragma omp parallel for \
       schedule (dynamic,5) \
-      private (len,trLen,pos,eL,lenP,wNorm,lCdfNorm,posBias5,posBias3,trRS)
+      private (len,trLen,pos,eL,lenP,wNorm,lCdfNorm,trRS)
    for(m=0;m<M;m++){
       if(verbose && (m!=0) && (m%(M/10)==0)){
          #pragma omp critical
@@ -784,8 +783,8 @@ vector<double> ReadDistribution::getEffectiveLengths(){ //{{{
          const string &trFS = trSeq->getTr(m);
          trRS.resize(trFS.size());
          for(size_t i=0;i<trRS.size();i++)trRS[i] = complementBase(trFS[trFS.size() - i - 1]);
-         posBias5.resize(trLen);
-         posBias3.resize(trLen);
+         vector<double> posBias5(trLen);
+         vector<double> posBias3(trLen);
          DEBUG(message("Precomputing posBias.\n"));
          for(pos = 0;pos<trLen;pos++){
             posBias5[pos] = getPosBias(pos+1, mate_5, trLen)*getSeqBias(pos+1, mate_5, trRS);
