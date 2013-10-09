@@ -1,3 +1,13 @@
+CHANGES IN VERSION 1.5.2  (2013-10-09)
+-------------------------------------
+BUG FIXES
+  o fixed force option in estimateHyperPar (it worked the wrong way around)
+  o fixed problem with effective lengths being too small
+
+NEW FEATURES
+  o add estimateVBExpression function that uses Variational Bayes inference
+    method to estimate expression levels of transcripts
+
 CHANGES IN VERSION 1.4.3  (2013-07-08)
 -------------------------------------
 BUG FIXES

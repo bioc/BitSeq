@@ -1,10 +1,13 @@
 #include<algorithm>
 #include<fstream>
+#include<set>
 #include<sstream>
 
 #include "TranscriptSequence.h"
 
 #include "common.h"
+#include "misc.h"
+
 
 // Number of times we randomly probe for old cache record.
 // CR: #define WORST_SEARCH_N 10
@@ -16,11 +19,11 @@ TranscriptSequence::TranscriptSequence(){//{{{
    gotGeneNames=false;
    // CR: useCounter = 0;
 }//}}}
-TranscriptSequence::TranscriptSequence(string fileName){//{{{
+TranscriptSequence::TranscriptSequence(string fileName, refFormatT format){//{{{
    TranscriptSequence();
-   readSequence(fileName);
+   readSequence(fileName,format);
 }//}}}
-bool TranscriptSequence::readSequence(string fileName){//{{{
+bool TranscriptSequence::readSequence(string fileName, refFormatT format){//{{{
    fastaF.open(fileName.c_str());
    if(!fastaF.is_open()){
       error("TranscriptSequence: problem reading transcript file.\n");
@@ -32,22 +35,39 @@ bool TranscriptSequence::readSequence(string fileName){//{{{
    string trDesc,geneName;
    long pos;
    istringstream geneDesc;
+   trNames.clear();
+   geneNames.clear();
    gotGeneNames = true;
+   // Record trNames only from gencode ref.
+   gotTrNames = (format == GENCODE);
    while(fastaF.good()){
       while((fastaF.peek()!='>')&&(fastaF.good()))
          fastaF.ignore(1000,'\n');
       if(! fastaF.good())break;
       // Read description line:
       getline(fastaF, trDesc, '\n');
-      // look for gene name:
-      pos=min(trDesc.find("gene:"),trDesc.find("gene="));
-      if(pos!=(long)string::npos){
-         geneDesc.clear();
-         geneDesc.str(trDesc.substr(pos+5));
-         geneDesc >> geneName;
-         geneNames.push_back(geneName);
-      }else{
-         gotGeneNames = false;
+      // look for gene name if previous lines had gene name:
+      if(gotGeneNames){
+         if(format == GENCODE){
+            vector<string> lineTokens = ns_misc::tokenize(trDesc,"|");
+            if(lineTokens.size()>1){
+               geneNames.push_back(lineTokens[1]);
+               trNames.push_back(lineTokens[0].substr(1));
+            }else{
+               gotGeneNames = false;
+               gotTrNames = false;
+            }
+         }else{ // format == STANDARD
+            pos=min(trDesc.find("gene:"),trDesc.find("gene="));
+            if(pos!=(long)string::npos){
+               geneDesc.clear();
+               geneDesc.str(trDesc.substr(pos+5));
+               geneDesc >> geneName;
+               geneNames.push_back(geneName);
+            }else{
+               gotGeneNames = false;
+            }
+         }
       }
       // remember position:
       newTr.seek=fastaF.tellg();
@@ -85,6 +105,10 @@ bool TranscriptSequence::loadSequence(){//{{{
       fastaF.clear();
    }
    return true;
+}//}}}
+long TranscriptSequence::getG() const{//{{{
+   if(!gotGeneNames)return 0;
+   return (set<string>(geneNames.begin(),geneNames.end())).size();
 }//}}}
 const string &TranscriptSequence::getTr(long tr) const{//{{{
    if((tr<0)||(tr>=M))return noneTr;

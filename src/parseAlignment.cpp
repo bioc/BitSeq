@@ -38,10 +38,13 @@ class TagAlignment{//{{{
       void setProb(double p){prob=p;}
 }; //}}}
 
+// String comparsion allowing last cmpEPS bases different as long as length 
+// is the same.
+long readNameCmp(const char *str1, const char *str2);
 // Read Fragment from SAM file.
 // Copies data from 'next' fragment into 'cur' fragment and reads new fragment information into 'next'.
 // Fragment is either both paired-ends or just single read.
-bool readNextFragment(samfile_t* samData, fragmentP &cur, fragmentP &next);
+bool readNextFragment(samfile_t* samData, ns_rD::fragmentP &cur, ns_rD::fragmentP &next);
 
 // Determine input format base either on --format flag or on the file extension.
 // Sets format to bam/sam and returns true, or returns false if format is unknown.
@@ -66,7 +69,7 @@ string programDescription =
    string inFormat;
    samfile_t *samData=NULL;
    ReadDistribution readD;
-   fragmentP curF = new fragmentT, nextF = new fragmentT;
+   ns_rD::fragmentP curF = new ns_rD::fragmentT, nextF = new ns_rD::fragmentT;
    // This could be changed to either GNU's hash_set or C++11's unsorted_set, once it's safe.
    set<string> ignoredReads;
    // Intro: {{{
@@ -76,6 +79,7 @@ string programDescription =
    args.addOptionS("f","format","format",0,"Input format: either SAM, BAM.");
    args.addOptionS("t","trInfoFile","trInfoFileName",0,"If transcript(reference sequence) information is contained within SAM file, program will write this information into <trInfoFile>, otherwise it will look for this information in <trInfoFile>.");
    args.addOptionS("s","trSeqFile","trSeqFileName",1,"Transcript sequence in FASTA format --- for non-uniform read distribution estimation.");
+   args.addOptionS("","trSeqHeader","trSeqHeader",0,"Transcript sequence header format enables gene name extraction (standard/gencode).","standard");
    args.addOptionS("e","expressionFile","expFileName",0,"Transcript relative expression estimates --- for better non-uniform read distribution estimation.");
    args.addOptionL("N","readsN","readsN",0,"Total number of reads. This is not necessary if [SB]AM contains also reads with no valid alignments.");
    args.addOptionS("","failed","failed",0,"File name where to save names of reads that failed to align as pair.");
@@ -85,8 +89,9 @@ string programDescription =
    args.addOptionS("","distributionFile","distributionFileName",0,"Name of file to which read-distribution should be saved.");
    args.addOptionL("P","procN","procN",0,"Maximum number of threads to be used. This provides parallelization only when computing non-uniform read distribution (i.e. runs without --uniform flag).",3);
    args.addOptionB("V","veryVerbose","veryVerbose",0,"Very verbose output.");
-   args.addOptionL("","noiseMismatches","numNoiseMismatches",0,"Number of mismatches to be considered as noise.",LOW_PROB_MISSES);
+   args.addOptionL("","noiseMismatches","numNoiseMismatches",0,"Number of mismatches to be considered as noise.",ns_rD::LOW_PROB_MISSES);
    args.addOptionL("l","limitA","maxAlignments",0,"Limit maximum number of alignments per read. (Reads with more alignments are skipped.)");
+   args.addOptionB("","unstranded","unstranded",0,"Paired read are not strand specific.");
    if(!args.parse(*argc,argv))return 0;
    if(args.verbose)buildTime(argv[0],__DATE__,__TIME__);
 #ifdef SUPPORT_OPENMP
@@ -100,7 +105,11 @@ string programDescription =
    if(args.verbose)message("Initializing fasta sequence reader.\n");
    // Initialize fasta sequence reader.
    trSeq = new TranscriptSequence();
-   trSeq->readSequence(args.getS("trSeqFileName")); 
+   if(args.getLowerS("trSeqHeader") == "gencode"){
+      trSeq->readSequence(args.getS("trSeqFileName"), GENCODE); 
+   }else{
+      trSeq->readSequence(args.getS("trSeqFileName"), STANDARD); 
+   }
    // Check numbers for transcripts match.
    if(trSeq->getM() != M){
       error("Main: Number of transcripts in the alignment file and the sequence file are different: %ld vs %ld\n",M,trSeq->getM());
@@ -126,11 +135,18 @@ string programDescription =
          }
       }
    }
+   // If format is GENCODE and transcript names were extracted, update.
+   if((args.getLowerS("trSeqHeader") == "gencode")&&(trSeq->hasTrNames())){
+      if(args.flag("veryVerbose"))message("Updating transcript names.\n");
+      if(!trInfo->updateTrNames(trSeq->getTrNames())){
+         if(args.flag("veryVerbose"))warning("Transcript names update failed.\n");
+      }
+   }
    if(!args.flag("uniform")){
       // Try loading expression file from previous estimation for non-uniform read model.
       if(args.isSet("expFileName")){
          if(args.verbose)message("Loading transcript initial expression data.\n");
-         trExp = new TranscriptExpression(args.getS("expFileName"));
+         trExp = new TranscriptExpression(args.getS("expFileName"), GUESS);
          if(trExp->getM() != M){
             error("Main: Number of transcripts in the alignment file and the expression file are different: %ld vs %ld\n",M,trExp->getM());
             return 1;
@@ -154,7 +170,7 @@ string programDescription =
       readD.initUniform(M,trInfo,trSeq,args.flag("veryVerbose"));
    }else{
       if(args.verbose)message("Estimating non-uniform read distribution.\n");
-      readD.init(M,trInfo,trSeq,trExp,args.flag("veryVerbose"));
+      readD.init(M,trInfo,trSeq,trExp,args.flag("unstranded"),args.flag("veryVerbose"));
       if(args.flag("veryVerbose"))message(" ReadDistribution initialization done.\n");
       analyzeReads = true;
    }
@@ -163,14 +179,14 @@ string programDescription =
    }
    // fill in "next" fragment:
    // Counters for all, Good Alignments; and weird alignments
-   long observeN, pairedGA, firstGA, secondGA, singleGA, weirdGA, allGA;
-   long RE_noEndInfo, RE_weirdPairdInfo;
+   long observeN, pairedGA, firstGA, secondGA, singleGA, weirdGA, allGA, pairedBad;
+   long RE_noEndInfo, RE_weirdPairdInfo, RE_nameMismatch;
    long maxAlignments = 0;
    if(args.isSet("maxAlignments") && (args.getL("maxAlignments")>0))
       maxAlignments = args.getL("maxAlignments");
    // start counting (and possibly estimating):
-   observeN = pairedGA = firstGA = secondGA = singleGA = weirdGA = 0;
-   RE_noEndInfo = RE_weirdPairdInfo = 0;
+   observeN = pairedGA = firstGA = secondGA = singleGA = weirdGA = pairedBad = 0;
+   RE_noEndInfo = RE_weirdPairdInfo = RE_nameMismatch = 0;
    ns_parseAlignment::readNextFragment(samData, curF, nextF);
    while(ns_parseAlignment::readNextFragment(samData,curF,nextF)){
       R_INTERUPT;
@@ -178,7 +194,16 @@ string programDescription =
          // (at least) The first read was mapped.
          if( curF->paired ) {
             // Fragment's both reads are mapped as a pair.
-            pairedGA++;
+            if(ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(curF->second))==0){
+               pairedGA++;
+            }else{
+               pairedBad++;
+               if(RE_nameMismatch == 0){
+                  warning("Paired read name mismatch: %s %s\n",bam1_qname(curF->first), bam1_qname(curF->second));
+               }
+               RE_nameMismatch++;
+               if(RE_nameMismatch>10)break;
+            }
          }else {
             if (curF->first->core.flag & BAM_FPAIRED) {
                // Read was part of pair (meaning that the other is unmapped).
@@ -194,7 +219,7 @@ string programDescription =
          }
       }
       // Next fragment is different.
-      if(strcmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0){
+      if(ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0){
          Ntotal++;
          allGA = singleGA + pairedGA + firstGA +secondGA+ weirdGA;
          if( allGA == 0 ){ 
@@ -205,15 +230,20 @@ string programDescription =
          if(weirdGA)RE_noEndInfo++;
          if((singleGA>0) && (pairedGA>0)) RE_weirdPairdInfo++;
          // If it's good uniquely aligned fragment/read, add it to the observation.
-         if(( allGA == 1) && analyzeReads){
+         if(( allGA == 1) && analyzeReads && (pairedBad == 0)){
             if(readD.observed(curF))observeN++;
          }else if(maxAlignments && (allGA>maxAlignments)) {
             // This read will be ignored.
             ignoredReads.insert(bam1_qname(curF->first));
             Nmap --;
          }
-         pairedGA = firstGA = secondGA = singleGA = weirdGA = 0;
+         pairedGA = firstGA = secondGA = singleGA = weirdGA = pairedBad = 0;
       }
+   }
+   if(RE_nameMismatch>10){
+      error("Names of paired mates didn't match at least 10 times.\n"
+            "   Something is possibly wrong with your data or the reads have to be renamed.\n");
+      return 1;
    }
    message("Reads: all(Ntotal): %ld  mapped(Nmap): %ld\n",Ntotal,Nmap);
    if(args.verbose)message("  %ld reads were used to estimate non-uniform distribution.\n",observeN);
@@ -256,6 +286,7 @@ string programDescription =
    bool invalidAlignment = false;
    long readC, pairedN, singleN, firstN, secondN, weirdN, invalidN, noN;
    readC = pairedN = singleN = firstN = secondN = weirdN = invalidN = noN = 0;
+   RE_nameMismatch = 0 ;
    // fill in "next" fragment:
    ns_parseAlignment::readNextFragment(samData, curF, nextF);
    while(ns_parseAlignment::readNextFragment(samData,curF,nextF)){
@@ -264,7 +295,7 @@ string programDescription =
       if(ignoredReads.count(bam1_qname(curF->first))>0){
          // Read reads while the name is the same.
          while(ns_parseAlignment::readNextFragment(samData,curF,nextF)){
-            if(strcmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0)
+            if(ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0)
                break;
          }
          readC++;
@@ -273,7 +304,14 @@ string programDescription =
       }
       if( !(curF->first->core.flag & BAM_FUNMAP) ){
          // (at least) The first read was mapped.
-         if(readD.getP(curF, prob, probNoise)){
+         if(curF->paired && (ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(curF->second))!=0)){
+            if(RE_nameMismatch == 0){
+               warning("Paired read name mismatch: %s %s\n",bam1_qname(curF->first), bam1_qname(curF->second));
+            }
+            RE_nameMismatch++;
+            if(RE_nameMismatch>10)break;
+            invalidAlignment = true;
+         }else if(readD.getP(curF, prob, probNoise)){
             // We calculated valid probabilities for this alignment.   
             // Add alignment:
             alignments.push_back(ns_parseAlignment::TagAlignment(curF->first->core.tid+1, prob, probNoise));
@@ -300,7 +338,7 @@ string programDescription =
          }
       }
       // next fragment has different name
-      if(strcmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0){
+      if(ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0){
          readC++;
          if(args.verbose){ if(progressLog(readC,Ntotal,10,' '))timer.split(1,'m');}
          if(Sof(alignments)>0){
@@ -331,6 +369,11 @@ string programDescription =
          }
          invalidAlignment = false;
       }
+   }
+   if(RE_nameMismatch>10){
+      error("Names of paired mates didn't match at least 10 times.\n"
+            "   Something is possibly wrong with your data or the reads have to be renamed.\n");
+      return 1;
    }
    outF.close();
    timer.split(0,'m');
@@ -399,8 +442,26 @@ int main(int argc,char* argv[]){
 
 namespace ns_parseAlignment {
 
-bool readNextFragment(samfile_t* samData, fragmentP &cur, fragmentP &next){//{{{
-   static fragmentP tmpF = NULL;
+long readNameCmp(const char *str1, const char *str2){//{{{
+   // Check first character(so that we can look back later).
+   if(*str1 != *str2)return *str1 - *str2;
+   while(*str1 || *str2){
+      if(*str1 != *str2){
+         // They can differ in last character if its preceeeded by /:_.
+         if(*str1 && *str2 && (!*(str1+1)) && (!*(str2+1)) && 
+            ((*(str1-1) == '/') || (*(str1-1) == ':') || (*(str1-1) == '_'))){
+            return 0;
+         }
+         return *str1 - *str2;
+      }
+      str1++;
+      str2++;
+   }
+   return 0;
+}//}}}
+
+bool readNextFragment(samfile_t* samData, ns_rD::fragmentP &cur, ns_rD::fragmentP &next){//{{{
+   static ns_rD::fragmentP tmpF = NULL;
    bool currentOK = true;
    // switch current to next:
    tmpF = cur;
@@ -437,7 +498,7 @@ bool readNextFragment(samfile_t* samData, fragmentP &cur, fragmentP &next){//{{{
 
 bool setInputFormat(const ArgumentParser &args, string *format){//{{{
    if(args.isSet("format")){
-      *format = ns_misc::toLower(args.getS("format"));
+      *format = args.getLowerS("format");
       if((*format =="sam")||(*format == "bam")){
          return true;
       }

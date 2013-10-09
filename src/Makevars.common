@@ -5,6 +5,7 @@ OBJECTS= \
    estimateDE.o \
    estimateExpression.o \
    estimateHyperPar.o \
+   estimateVBExpression.o \
    FileHeader.o \
    getGeneExpression.o \
    getVariance.o \
@@ -18,9 +19,11 @@ OBJECTS= \
    PosteriorSamples.o \
    ReadDistribution.o \
    Sampler.o \
+   SimpleSparse.o \
    TagAlignments.o \
    TranscriptExpression.o \
    TranscriptInfo.o \
    TranscriptSequence.o \
    transposeFiles.o \
+   VariationalBayes.o \
    R_init_BitSeq.o
