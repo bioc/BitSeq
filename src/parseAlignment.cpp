@@ -9,6 +9,7 @@ using namespace std;
 
 #include "ArgumentParser.h"
 #include "common.h"
+#include "misc.h"
 #include "MyTimer.h"
 #include "ReadDistribution.h"
 #include "TranscriptExpression.h"
@@ -36,9 +37,6 @@ class TagAlignment{//{{{
       double getLowProb()const {return lowProb;}
       void setProb(double p){prob=p;}
 }; //}}}
-
-// Convert string into lower case.
-string toLower(string str);
 
 // Read Fragment from SAM file.
 // Copies data from 'next' fragment into 'cur' fragment and reads new fragment information into 'next'.
@@ -110,8 +108,8 @@ string programDescription =
    }
    // Check that length of each transcript matches.
    for(i=0;i<M;i++){
-      if(trInfo->L(i) != (long)(trSeq->getTr(i))->size()){
-         error("Main: Transcript info length and sequence length of transcript %ld DO NOT MATCH! (%ld %d)\n",i,trInfo->L(i),(int)((trSeq->getTr(i))->size()));
+      if(trInfo->L(i) != (long)(trSeq->getTr(i).size())){
+         error("Main: Transcript info length and sequence length of transcript %ld DO NOT MATCH! (%ld %d)\n",i,trInfo->L(i),(int)(trSeq->getTr(i).size()));
          return 1;
       }
    }
@@ -165,13 +163,13 @@ string programDescription =
    }
    // fill in "next" fragment:
    // Counters for all, Good Alignments; and weird alignments
-   long pairedGA, firstGA, secondGA, singleGA, weirdGA, allGA;
+   long observeN, pairedGA, firstGA, secondGA, singleGA, weirdGA, allGA;
    long RE_noEndInfo, RE_weirdPairdInfo;
    long maxAlignments = 0;
    if(args.isSet("maxAlignments") && (args.getL("maxAlignments")>0))
       maxAlignments = args.getL("maxAlignments");
    // start counting (and possibly estimating):
-   pairedGA = firstGA = secondGA = singleGA = weirdGA = 0;
+   observeN = pairedGA = firstGA = secondGA = singleGA = weirdGA = 0;
    RE_noEndInfo = RE_weirdPairdInfo = 0;
    ns_parseAlignment::readNextFragment(samData, curF, nextF);
    while(ns_parseAlignment::readNextFragment(samData,curF,nextF)){
@@ -208,7 +206,7 @@ string programDescription =
          if((singleGA>0) && (pairedGA>0)) RE_weirdPairdInfo++;
          // If it's good uniquely aligned fragment/read, add it to the observation.
          if(( allGA == 1) && analyzeReads){
-            readD.observed(curF);
+            if(readD.observed(curF))observeN++;
          }else if(maxAlignments && (allGA>maxAlignments)) {
             // This read will be ignored.
             ignoredReads.insert(bam1_qname(curF->first));
@@ -217,19 +215,20 @@ string programDescription =
          pairedGA = firstGA = secondGA = singleGA = weirdGA = 0;
       }
    }
-   timer.split(0,'m');
    message("Reads: all(Ntotal): %ld  mapped(Nmap): %ld\n",Ntotal,Nmap);
+   if(args.verbose)message("  %ld reads were used to estimate non-uniform distribution.\n",observeN);
    if(ignoredReads.size()>0)message("  %ld reads are skipped due to having more than %ld alignments.\n",ignoredReads.size(), maxAlignments);
    if(RE_noEndInfo)warning("  %ld reads that were paired, but do not have \"end\" information.\n  (is your alignment file valid?)", RE_noEndInfo);
    if(RE_weirdPairdInfo)warning("  %ld reads that were reported as both paired and single end.\n  (is your alignment file valid?)", RE_weirdPairdInfo);
    readD.writeWarnings();
-   // Normalize read distribution:
    if(args.flag("veryVerbose"))timer.split(0,'m');
+   // Normalize read distribution:
    if(args.flag("veryVerbose"))message("Normalizing read distribution.\n");
    readD.normalize();
    if(args.isSet("distributionFileName")){
       readD.logProfiles(args.getS("distributionFileName"));
    }
+   timer.split(0,'m');
    // }}}
 
    // Writing probabilities: {{{
@@ -345,10 +344,15 @@ string programDescription =
       if(firstN+secondN+weirdN>0)
          message(" %ld half alignments (paired-end mates aligned independently)\n",firstN+secondN+weirdN);
       if(singleN>0)message(" %ld single-read alignments\n",singleN);
+      //flushStdout();
+      messageFlush();
    }else {
-      message("Alignments: %ld.\n",pairedN+singleN+firstN+secondN+weirdN);
+      messageF("Alignments: %ld.\n",pairedN+singleN+firstN+secondN+weirdN);
    }
    readD.writeWarnings();
+   if(args.flag("veryVerbose")){
+      message("Number of weights cached: %ld\n",readD.getWeightNormCount());
+   }
    // Deal with reads that failed to align {{{
    if(args.isSet("failed")){
       outF.open(args.getS("failed").c_str());
@@ -360,7 +364,7 @@ string programDescription =
    } //}}}
    // Compute effective length and save transcript info {{{
    if(args.isSet("trInfoFileName")){
-      if(args.verbose)message("Computing effective lengths.\n");
+      if(args.verbose)messageF("Computing effective lengths.\n");
       trInfo->setEffectiveLength(readD.getEffectiveLengths());
       if(! trInfo->writeInfo(args.getS("trInfoFileName"))){
          warning("Main: File %s probably already exists.\n"
@@ -394,12 +398,6 @@ int main(int argc,char* argv[]){
 #endif
 
 namespace ns_parseAlignment {
-
-string toLower(string str){//{{{
-   for(long i=0;i<Sof(str);i++)
-      if((str[i]>='A')&&(str[i]<='Z'))str[i]=str[i]-'A'+'a';
-   return str;
-}//}}}
 
 bool readNextFragment(samfile_t* samData, fragmentP &cur, fragmentP &next){//{{{
    static fragmentP tmpF = NULL;
@@ -439,7 +437,7 @@ bool readNextFragment(samfile_t* samData, fragmentP &cur, fragmentP &next){//{{{
 
 bool setInputFormat(const ArgumentParser &args, string *format){//{{{
    if(args.isSet("format")){
-      *format = toLower(args.getS("format"));
+      *format = ns_misc::toLower(args.getS("format"));
       if((*format =="sam")||(*format == "bam")){
          return true;
       }
@@ -447,7 +445,7 @@ bool setInputFormat(const ArgumentParser &args, string *format){//{{{
    }
    string fileName = args.args()[0];
    string extension = fileName.substr(fileName.rfind(".")+1);
-   *format = toLower(extension);
+   *format = ns_misc::toLower(extension);
    if((*format =="sam")||(*format == "bam")){
       if(args.verb())message("Assuming alignment file in '%s' format.\n",format->c_str());
       return true;

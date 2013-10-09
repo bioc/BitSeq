@@ -311,9 +311,6 @@ res1 <- getExpression("data-c0b0.sam",
    MCMC_burnIn=200,
    MCMC_samplesN=200,
    pretend=TRUE)
-
-# restore the original working directory
-setwd(old_directory);
 @
 
 

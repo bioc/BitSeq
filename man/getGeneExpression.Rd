@@ -4,8 +4,10 @@
 \title{Calculate gene expression or relative within gene expression}
 \description{Calculate either gene expression or relative within gene expression using transcript expression samples and transcript information file.}
 \usage{
-getGeneExpression(sampleFile, outFile=NULL, trInfo=NULL, trInfoFile=NULL, pretend=FALSE)
-getWithinGeneExpression(sampleFile, outFile=NULL, trInfo=NULL, trInfoFile=NULL, pretend=FALSE)
+getGeneExpression(sampleFile, outFile=NULL, trInfo=NULL, trInfoFile=NULL,
+      pretend=FALSE)
+getWithinGeneExpression(sampleFile, outFile=NULL, trInfo=NULL, trInfoFile=NULL,
+      pretend=FALSE, keepOrder=FALSE)
 }
 \arguments{
 \item{sampleFile}{File containing the transcript expression samples.}
@@ -13,6 +15,7 @@ getWithinGeneExpression(sampleFile, outFile=NULL, trInfo=NULL, trInfoFile=NULL, 
 \item{trInfo}{\code{DataFrame} containing transcript information. Either \code{trInfo} or \code{trInfoFile} argument has to be provided. Otherwise function tries file with same name as \code{sampleFile} and extension \code{tr}. }
 \item{trInfoFile}{Transcript information file. Either \code{trInfo} or \code{trInfoFile} argument has to be provided. Otherwise function tries file with same name as \code{sampleFile} and extension \code{tr}.}
 \item{pretend}{Do not execute, only print out command line calls for the C++ version of the program.}
+\item{keepOrder}{If \code{TRUE} then transcripts will always keep same order, otherwise transcripts might be grouped by genes in the output. (The order is always same if transcripts are grouped by genes.)}
 }
 \details{
 The \code{getGeneExpression} function takes samples of transcript expression and produces file with expression of genes by adding up transcript expression.

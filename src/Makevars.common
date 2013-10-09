@@ -13,6 +13,7 @@ OBJECTS= \
    GibbsSampler.o \
    lowess.o \
    misc.o \
+   MyTimer.o \
    ParseAlignment.o \
    PosteriorSamples.o \
    ReadDistribution.o \

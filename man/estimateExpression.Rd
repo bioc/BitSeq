@@ -8,11 +8,11 @@ estimateExpression(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL,
       trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, 
       MCMC_samplesSave=NULL, MCMC_chainsN=NULL, MCMC_dirAlpha=NULL, seed=NULL, 
       verbose=NULL, procN=NULL, pretend=FALSE)
-estimateExpressionLegacy(probFile, outFile, parFile=NULL, outputType=NULL, gibbs=NULL, 
-      trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL, MCMC_samplesN=NULL, 
-      MCMC_samplesSave=NULL, MCMC_samplesNmax=NULL, MCMC_chainsN=NULL, 
-      MCMC_scaleReduction=NULL, MCMC_dirAlpha=NULL, seed=NULL, verbose=NULL, 
-      pretend=FALSE)
+estimateExpressionLegacy(probFile, outFile, parFile=NULL, outputType=NULL,
+      gibbs=NULL, trInfoFile=NULL, thetaActFile=NULL, MCMC_burnIn=NULL,
+      MCMC_samplesN=NULL, MCMC_samplesSave=NULL, MCMC_samplesNmax=NULL,
+      MCMC_chainsN=NULL, MCMC_scaleReduction=NULL, MCMC_dirAlpha=NULL,
+      seed=NULL, verbose=NULL, pretend=FALSE)
 }
 \arguments{
 \item{probFile}{File with alignment probabilities produced by \code{parseAlignment}}

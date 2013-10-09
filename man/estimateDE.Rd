@@ -44,8 +44,8 @@ For more than one conditions, the comparison is done pairwise between all condit
 \dontrun{
 cond1Files = c("data-c0b0.rpkm","data-c0b1.rpkm")
 cond2Files = c("data-c1b0.rpkm","data-c1b1.rpkm")
-estimateDE(conditions=list(cond1Files, cond2Files), outFile="data.pplr", parFile="data.par", 
-           norm=c(1.0, 0.999, 1.0017, 0.9998))
+estimateDE(conditions=list(cond1Files, cond2Files), outFile="data.pplr",
+      parFile="data.par", norm=c(1.0, 0.999, 1.0017, 0.9998))
 }
 }
 
