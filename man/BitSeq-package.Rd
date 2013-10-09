@@ -4,17 +4,12 @@
 \docType{package}
 \title{Bayesian Inference of Transcripts from Sequencing data}
 \description{
-The BitSeq package is targeted for transcript expression analysis and differential expression analysis of RNA-seq data in two stage process. In the first stage it uses Bayesian inference methodology to infer expression of individual transcripts from individual RNA-seq experiments. The second stage of BitSeq embraces the differential expression analysis of transcript expression. Providing expression estimates from replicates of multiple conditions, Log-Normal model of the estimates is used for inferring the condition mean transcript expression and ranking the transcripts based on the likelihood of differential expression.
-}
-\details{
-\tabular{ll}{
-Package: \tab BitSeq\cr
-Type: \tab Package\cr
-Version: \tab 1.4.0\cr
-Date: \tab 2013-04-01\cr
-License: \tab Artistic-2.0 + other\cr
-}
-For details of using the package please refer to the Vignette.
+The BitSeq package is targeted for transcript expression analysis and differential expression analysis of RNA-seq data in two stage process.
+   
+In the first stage it uses Bayesian inference methodology to infer expression of individual transcripts from individual RNA-seq experiments.
+
+The second stage of BitSeq embraces the differential expression analysis of transcript expression.
+Providing expression estimates from replicates of multiple conditions, Log-Normal model of the estimates is used for inferring the condition mean transcript expression and ranking the transcripts based on the likelihood of differential expression.
 }
 \author{
 Peter Glaus, Antti Honkela and Magnus Rattray

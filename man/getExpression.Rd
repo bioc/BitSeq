@@ -23,9 +23,9 @@ getExpression(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, type="RPKM",
 \details{
 This function uses \code{parseAlignment} function to compute alignment probabilities and the function \code{estimateExpression} to produce the expression samples.
 
-In case of non-uniform read distribution, it first produces approximate estimates of expression using uniform distribution and uses these estimates in to compute read distribution bias-corrected alignment probabilities, which are used in the \code{estimateExpression} function to produce expression estimates.
+In case of non-uniform read distribution, it first produces approximate estimates of expression using uniform read distribution with VB inference and subsequently uses these estimates to compute read distribution bias-corrected alignment probabilities, which are used in the \code{estimateExpression} function to produce expression estimates.
 
-The order of transcripts in the results is always the same as in the alignment file. The transcripts can be indetified by names stored in the \code{trInfo} part of the result.
+The order of transcripts in the results is always the same as in the alignment file. The transcripts can be identified by names stored in the \code{trInfo} part of the result.
 }
 \value{
 \code{list} with items:

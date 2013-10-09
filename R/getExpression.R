@@ -28,14 +28,14 @@ getExpression <- function(alignFile, trSeqFile, outPrefix=NULL, uniform=TRUE, ty
       probUF <- paste(outPrefix,"-U",".prob",sep="");
       trUF <- paste(outPrefix,"-U",".tr",sep="");
       message("## Pre-Computing alignment probabilities with uniform read distribution.");
-      parseAlignment(alignFile, probUF, trSeqFile, trInfoFile=trUF, uniform=FALSE, limitA=limitA, pretend=pretend);
+      parseAlignment(alignFile, probUF, trSeqFile, trInfoFile=trUF, uniform=TRUE, limitA=limitA, pretend=pretend);
       message("## Pre-Computing expression with uniform read distribution.");
       if (!is.null(seed)) {
          # Use different seed for initial sampling.
          seed <- seed + 17;
       }
-      estimateExpression(probUF, paste(outPrefix,"-U",sep=""), outputType="theta", trInfoFile=trUF, seed=seed, MCMC_burnIn=1000, MCMC_samplesN=1000, MCMC_samplesSave=10, MCMC_chainsN=2, pretend=pretend);
-      exprFile <- paste(outPrefix,"-U",".thetaMeans",sep=""); 
+      estimateVBExpression(probUF, paste(outPrefix,"-U",sep=""), trInfoFile=trUF, seed=seed, pretend=pretend);
+      exprFile <- paste(outPrefix,"-U",".m_alphas",sep=""); 
    }else{
       exprFile <- NULL;
    }

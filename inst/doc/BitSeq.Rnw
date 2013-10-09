@@ -229,12 +229,32 @@ estimateExpressionLegacy( "data-c0b0.prob",
    MCMC_chainsN = 2 )
 @
 
+
 \subsubsection{Examining the samples}
 
 Again, we can view the resulting file (\FILE{data-c0b0.rpkm} in this case) using the function \Rfunction{loadSamples}.
 <<eval=FALSE >>=
 loadSamples("data-c0b0.rpkm")
 @
+
+\subsubsection{Estimating transcript expression with Variational Bayes algorithm}
+
+Variational Bayes is an alternative inference algorithm for estimating transcript expression. 
+While it accurately estimates mean expression, it underestimates the variance.
+The algorithm is implemented in the function \Rfunction{estimateVBExpression} which takes the same input as \Rfunction{estimateExpression}, the \FILE{.prob} file and optionally the \FILE{.tr} file. 
+
+The default output is the mean $\theta$ and parameters of Dirichlet distribution reported in \FILE{data-c0b0-vb.m\_alphas}.
+The $\theta$ can be multiplied by total number of reads to produce the estimated read counts per transcript.
+The first row of the data corresponds to noise transcript and should be discarded. 
+
+<<keep.source=FALSE >>=
+estimateVBExpression( "data-c0b0.prob", 
+   outFile = "data-c0b0-vb", 
+   outputType = "RPKM",
+   trInfoFile = "data.tr")
+@
+
+The function can also produce also samples from the posterior distribution in form of RPKM, $\theta$ or counts when option \Rvar{samples} is used.
 
 \subsection{Stage 2 - Differential expression analysis}
 
