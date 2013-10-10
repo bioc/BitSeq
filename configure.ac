@@ -1,5 +1,5 @@
 # Even though it's not used at the end, the 1.4.x should be updated before each release.
-AC_INIT([BitSeq], [1.4.x])
+AC_INIT([BitSeq], [1.6.x])
 AC_PREREQ([2.59])
 
 m4_include([m4/ac_openmp.m4])
