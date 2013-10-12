@@ -105,8 +105,8 @@ typedef struct {
 typedef void *tamFile;
 typedef void *bamFile;
 
-   int sam_read1(tamFile fp, bam_header_t *header, bam1_t *b);
    uint32_t bam_calend(const bam1_core_t *c, const uint32_t *cigar);
+   static bam1_t *bam_copy1(bam1_t *bdst, const bam1_t *bsrc);
 }
 
 // From sam.h:

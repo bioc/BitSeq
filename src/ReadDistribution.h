@@ -7,31 +7,11 @@
 using namespace std;
 
 #include "TranscriptInfo.h"
-#include "TranscriptSequence.h"
 #include "TranscriptExpression.h"
+#include "TranscriptSequence.h"
 
-#ifdef BIOC_BUILD
-
-#include "samtoolsHeader.h"
-#include <Rinternals.h>
-
-#define bam_init1() ((bam1_t*)S_alloc(1, sizeof(bam1_t)))
-// empty destroy, R frees memory itself
-#define bam_destroy1(b) 
-
-#else
-
-#include "bam.h"
-#include "sam.h"
-
-//#define bam_init1() ((bam1_t*)calloc(1, sizeof(bam1_t)))
-/*
-#define bam_destroy1(b) do { \
-   if (b) { free((b)->data); free(b); }	\
-} while (0)
-*/
-
-#endif
+#include "samtools/bam.h"
+#include "samtools/sam.h"
 
 namespace ns_rD {
 
@@ -59,9 +39,14 @@ struct fragmentT{//{{{
       bam_destroy1(first);
       bam_destroy1(second);
    }
+   void copyFragment(const fragmentT *sourceF){
+      paired = sourceF->paired;
+      bam_copy1(first, sourceF->first);
+      bam_copy1(second, sourceF->first);
+   }
 };
 
-typedef fragmentT* fragmentP;
+typedef fragmentT *fragmentP;
 //}}}
 
 class VlmmNode{//{{{
@@ -89,7 +74,7 @@ class ReadDistribution{
       long procN,M,fragSeen,singleReadLength,minFragLen;
       double lMu,lSigma,logLengthSum,logLengthSqSum;
       long lowProbMismatches;
-      bool verbose,uniform,unstranded,lengthSet,gotExpression,normalized;
+      bool verbose,warnFirst,uniform,unstranded,lengthSet,gotExpression,normalized;
       bool validLength;
       long warnPos, warnTIDmismatch, warnUnknownTID, noteFirstMateDown;
       TranscriptInfo* trInf;
@@ -131,6 +116,7 @@ class ReadDistribution{
    public:
       ReadDistribution();
       void setProcN(long procN);
+      void showFirstWarnings();
       void writeWarnings();
       bool init(long m, TranscriptInfo* trI, TranscriptSequence* trS, TranscriptExpression* trE, bool unstranded, bool verb = true);
       bool initUniform(long m, TranscriptInfo* trI, TranscriptSequence* trS, bool verb = true);
