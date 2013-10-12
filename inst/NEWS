@@ -1,7 +1,9 @@
-CHANGES IN VERSION 1.5.4 (2013-10-12)
+CHANGES IN VERSION 1.5.5 (2013-10-12)
 -------------------------------------
 BUG FIXES
   o fixed problem with processing Fasta reads
+  o fixed problem with processing mixed alignments in empirical estimation
+  o use proper includes for samtools
   
 CHANGES IN VERSION 1.5.2  (2013-10-09)
 -------------------------------------
