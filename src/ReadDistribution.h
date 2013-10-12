@@ -86,7 +86,7 @@ enum readT { mate_5, mate_3, FullPair };
 
 class ReadDistribution{
    private:
-      long M,fragSeen,singleReadLength,minFragLen;
+      long procN,M,fragSeen,singleReadLength,minFragLen;
       double lMu,lSigma,logLengthSum,logLengthSqSum;
       long lowProbMismatches;
       bool verbose,uniform,unstranded,lengthSet,gotExpression,normalized;
@@ -106,6 +106,9 @@ class ReadDistribution{
       // Cache probabilities for Phred score.
       vector<double> lProbMis;
       vector<double> lProbHit;
+      // Mismatch likelihods along read.
+      vector<double> lFreqHit;
+      vector<double> lFreqMis;
       // Cache length probabilities.
       vector<double> lLengthP,lLengthNorm;
    
@@ -113,6 +116,7 @@ class ReadDistribution{
       double computeLengthLP(double len) const;
       double getLengthLNorm(long trLen) const;
       void computeLengthProb();
+      void updateMismatchFreq(bam1_t *samA);
       void updatePosBias(long pos, ns_rD::biasT bias, long tid, double Iexp);
       void updateSeqBias(long pos, ns_rD::biasT bias, long tid, double Iexp);
       double getPosBias(long start, long end, ns_rD::readT read,
@@ -126,6 +130,7 @@ class ReadDistribution{
       pair<double, double> getSequenceLProb(bam1_t *samA) const;
    public:
       ReadDistribution();
+      void setProcN(long procN);
       void writeWarnings();
       bool init(long m, TranscriptInfo* trI, TranscriptSequence* trS, TranscriptExpression* trE, bool unstranded, bool verb = true);
       bool initUniform(long m, TranscriptInfo* trI, TranscriptSequence* trS, bool verb = true);

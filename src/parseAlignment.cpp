@@ -1,8 +1,5 @@
 // DECLARATIONS: {{{
 #include<cmath>
-#ifdef _OPENMP
-#include<omp.h>
-#endif
 #include<set>
 
 using namespace std;
@@ -17,6 +14,9 @@ using namespace std;
 
 #include "common.h"
 //}}}
+
+//#define DEBUG_AT(x) message(x) 
+#define DEBUG_AT(x)
 
 namespace ns_parseAlignment {
 class TagAlignment{//{{{
@@ -86,16 +86,14 @@ string programDescription =
    args.addOptionD("","lenMu","lenMu",0,"Set mean of log fragment length distribution. (l_frag ~ LogNormal(mu,sigma^2))");
    args.addOptionD("","lenSigma","lenSigma",0,"Set sigma^2 (or variance) of log fragment length distribution. (l_frag ~ LogNormal(mu,sigma^2))");
    args.addOptionS("","distributionFile","distributionFileName",0,"Name of file to which read-distribution should be saved.");
-   args.addOptionL("P","procN","procN",0,"Maximum number of threads to be used. This provides parallelization only when computing non-uniform read distribution (i.e. runs without --uniform flag).",3);
+   args.addOptionL("P","procN","procN",0,"Maximum number of threads to be used. This provides speedup mostly when using non-uniform read distribution model (i.e. no --uniform flag).",4);
    args.addOptionB("V","veryVerbose","veryVerbose",0,"Very verbose output.");
    args.addOptionL("","noiseMismatches","numNoiseMismatches",0,"Number of mismatches to be considered as noise.",ns_rD::LOW_PROB_MISSES);
    args.addOptionL("l","limitA","maxAlignments",0,"Limit maximum number of alignments per read. (Reads with more alignments are skipped.)");
    args.addOptionB("","unstranded","unstranded",0,"Paired read are not strand specific.");
    if(!args.parse(*argc,argv))return 0;
    if(args.verbose)buildTime(argv[0],__DATE__,__TIME__);
-#ifdef SUPPORT_OPENMP
-   omp_set_num_threads(args.getL("procN"));
-#endif
+   readD.setProcN(args.getL("procN"));
    // }}}
    if(!ns_parseAlignment::setInputFormat(args, &inFormat))return 1;
    if(!ns_parseAlignment::openSamFile(args.args()[0], inFormat, &samData))return 1;
@@ -292,8 +290,10 @@ string programDescription =
       R_INTERUPT;
       // Skip all alignments of this read.
       if(ignoredReads.count(bam1_qname(curF->first))>0){
+         DEBUG_AT(" ignore\n");
          // Read reads while the name is the same.
          while(ns_parseAlignment::readNextFragment(samData,curF,nextF)){
+            DEBUG_AT(" ignore\n");
             if(ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0)
                break;
          }
@@ -302,6 +302,7 @@ string programDescription =
          continue;
       }
       if( !(curF->first->core.flag & BAM_FUNMAP) ){
+         DEBUG_AT("M");
          // (at least) The first read was mapped.
          if(curF->paired && (ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(curF->second))!=0)){
             if(RE_nameMismatch == 0){
@@ -318,26 +319,34 @@ string programDescription =
             if( curF->paired ) {
                // Fragment's both reads are mapped as a pair.
                pairedN++;
+               DEBUG_AT(" P\n");
             }else {
                if (curF->first->core.flag & BAM_FPAIRED) {
                   // Read was part of pair (meaning that the other is unmapped).
                   if (curF->first->core.flag & BAM_FREAD1) {
                      firstN++;
+                     DEBUG_AT(" 1\n");
                   } else if (curF->first->core.flag & BAM_FREAD2) {
                      secondN++;
-                  } else weirdN ++;
+                     DEBUG_AT(" 2\n");
+                  } else {
+                     weirdN ++;
+                     DEBUG_AT(" W\n");
+                  }
                } else {
                   // Read is single end, with valid alignment.
                   singleN++;
+                  DEBUG_AT(" S\n");
                }
             }
          } else {
             // Calculation of alignment probabilities failed.
             invalidAlignment = true;
          }
-      }
+      }else DEBUG_AT("UNMAP\n");
       // next fragment has different name
       if(ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0){
+         DEBUG_AT("  last\n");
          readC++;
          if(args.verbose){ if(progressLog(readC,Ntotal,10,' '))timer.split(1,'m');}
          if(!alignments.empty()){
