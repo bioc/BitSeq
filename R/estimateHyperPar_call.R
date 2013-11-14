@@ -47,7 +47,7 @@ estimateHyperPar <- function( outFile, conditions=NULL, paramsInFile=NULL, meanF
    if ((!is.null(smoothOnly)) && (smoothOnly)) {
       args <- c(args, '--smoothOnly')
    }
-   if (force) {
+   if (!force) {
       args <- c(args, '--noforce')
    }
    if (!is.null(verbose) && (verbose)) {
