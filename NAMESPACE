@@ -1,7 +1,8 @@
 import(zlibbioc)
 useDynLib("BitSeq")
 
-importFrom(IRanges, DataFrame, as.data.frame)
+import(S4Vectors)
+importFrom(IRanges, as.data.frame)
 
 #exportPattern("^[^\\._]")
 export("parseAlignment","estimateExpression","estimateExpressionLegacy","estimateVBExpression","getMeanVariance","estimateHyperPar","estimateDE","getGeneExpression","getWithinGeneExpression");

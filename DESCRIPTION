@@ -1,12 +1,12 @@
 Package: BitSeq
 Type: Package
 Depends: Rsamtools, zlibbioc
-Imports: IRanges
+Imports: S4Vectors, IRanges
 LinkingTo: Rsamtools, zlibbioc
 Suggests: edgeR, DESeq
 Title: Transcript expression inference and differential expression
         analysis for RNA-seq data
-Version: 1.9.0
+Version: 1.9.1
 Date: 2013-10-12
 Author: Peter Glaus, Antti Honkela and Magnus Rattray
 Maintainer: Peter Glaus <glaus@cs.man.ac.uk>
