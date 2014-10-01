@@ -7,13 +7,14 @@
 \usage{
 parseAlignment( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL, 
       expressionFile=NULL, readsN=NULL, uniform=TRUE, limitA=NULL, lenMu=NULL,
-      lenSigma=NULL, verbose=NULL, veryVerbose=NULL, procN=NULL, pretend=FALSE)
+      lenSigma=NULL, excludeSingletons=NULL, mateNamesDiffer=NULL,
+      verbose=NULL, veryVerbose=NULL, procN=NULL, pretend=FALSE)
 }
 \arguments{
 \item{alignFile}{File containing read alignments.}
 \item{outFile}{Name of the output file.}
-\item{inputFormat}{Input format: possible values \code{SAM}, \code{BAM}. (This should be detected automatically in most cases.}
-\item{trInfoFile}{If transcript reference sequence information is contained within SAM file, program will write this information into <trInfoFile>, otherwise it will look for this information in the <trInfoFile>.}
+\item{inputFormat}{Input format: possible values \code{SAM}, \code{BAM}. (This should be detected automatically in most cases.)}
+\item{trInfoFile}{File to save transcript information extracted from [BS]AM file and reference.}
 \item{trSeqFile}{File containing transcript sequence in FASTA format.}
 \item{expressionFile}{Transcript relative expression estimates --- for better non-uniform read distribution estimation.}
 \item{readsN}{Total number of reads. This is usually not necessary if SAM/BAM contains also reads with no valid alignments.}
@@ -23,6 +24,8 @@ parseAlignment( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL
 \item{lenMu}{Set mean of log fragment length distribution. \eqn{l_{frag} \sim LogNormal(\mu,\sigma^2)}{l_frag ~ LogNormal(mu,sigma^2)}}
 \item{lenSigma}{Set \eqn{\sigma^2}{sigma^2} (or variance) of log fragment length distribution. \eqn{l_{frag} \sim LogNormal(\mu,\sigma^2)}{l_frag ~ LogNormal(mu,sigma^2)}}
 %\item{distributionFile}{Name of file to which read-distribution should be saved.}
+\item{excludeSingletons}{Exclude single mate alignments for paired-end reads.}
+\item{mateNamesDiffer}{Mates from paired-end reads have different names.}
 \item{verbose}{Verbose output.}
 \item{veryVerbose}{Very verbose output.}
 \item{procN}{Maximum number of threads to be used.}

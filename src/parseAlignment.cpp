@@ -37,6 +37,8 @@ class TagAlignment{//{{{
       void setProb(double p){prob=p;}
 }; //}}}
 
+// Check if next fragment is different.
+bool nextFragDiffers(const ns_rD::fragmentP curF, const ns_rD::fragmentP nextF, bool mateNamesDiffer);
 // String comparison allowing last cmpEPS bases different as long as length
 // is the same.
 long readNameCmp(const char *str1, const char *str2);
@@ -71,17 +73,19 @@ string programDescription =
    ns_rD::fragmentP curF = new ns_rD::fragmentT, nextF = new ns_rD::fragmentT, validAF = new ns_rD::fragmentT;
    // This could be changed to either GNU's hash_set or C++11's unsorted_set, once it's safe.
    set<string> ignoredReads;
+   long ignoredMaxAlignments = 0, ignoredSingletons = 0;
    // Intro: {{{
    // Set options {{{
    ArgumentParser args(programDescription,"[alignment file]",1);
    args.addOptionS("o","outFile","outFileName",1,"Name of the output file.");
    args.addOptionS("f","format","format",0,"Input format: either SAM, BAM.");
-   args.addOptionS("t","trInfoFile","trInfoFileName",0,"If transcript(reference sequence) information is contained within SAM file, program will write this information into <trInfoFile>, otherwise it will look for this information in <trInfoFile>.");
+   args.addOptionS("t","trInfoFile","trInfoFileName",0,"File to save transcript information extracted from [BS]AM file and reference.");
+   //args.addOptionS("t","trInfoFile","trInfoFileName",0,"If transcript(reference sequence) information is contained within SAM file, program will write this information into <trInfoFile>, otherwise it will look for this information in <trInfoFile>.");
    args.addOptionS("s","trSeqFile","trSeqFileName",1,"Transcript sequence in FASTA format --- for non-uniform read distribution estimation.");
    args.addOptionS("","trSeqHeader","trSeqHeader",0,"Transcript sequence header format enables gene name extraction (standard/gencode).","standard");
    args.addOptionS("e","expressionFile","expFileName",0,"Transcript relative expression estimates --- for better non-uniform read distribution estimation.");
    args.addOptionL("N","readsN","readsN",0,"Total number of reads. This is not necessary if [SB]AM contains also reads with no valid alignments.");
-   args.addOptionS("","failed","failed",0,"File name where to save names of reads that failed to align as pair.");
+   args.addOptionS("","failed","failed",0,"File name where to save names of reads that failed to align.");
    args.addOptionB("","uniform","uniform",0,"Use uniform read distribution.");
    args.addOptionD("","lenMu","lenMu",0,"Set mean of log fragment length distribution. (l_frag ~ LogNormal(mu,sigma^2))");
    args.addOptionD("","lenSigma","lenSigma",0,"Set sigma^2 (or variance) of log fragment length distribution. (l_frag ~ LogNormal(mu,sigma^2))");
@@ -92,6 +96,8 @@ string programDescription =
    args.addOptionL("l","limitA","maxAlignments",0,"Limit maximum number of alignments per read. (Reads with more alignments are skipped.)");
    args.addOptionB("","unstranded","unstranded",0,"Paired read are not strand specific.");
    args.addOptionB("","show1warning","show1warning",0,"Show first alignments that are considered wrong (TID unknown, TID mismatch, wrong strand).");
+   args.addOptionB("","excludeSingletons","excludeSingletons",0,"Exclude single mate alignments for paired-end reads.");
+   args.addOptionB("","mateNamesDiffer","mateNamesDiffer",0,"Mates from paired-end reads have different names.");
    if(!args.parse(*argc,argv))return 0;
    if(args.verbose)buildTime(argv[0],__DATE__,__TIME__);
    readD.setProcN(args.getL("procN"));
@@ -194,7 +200,9 @@ string programDescription =
          // (at least) The first read was mapped.
          if( curF->paired ) {
             // Fragment's both reads are mapped as a pair.
-            if(ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(curF->second))==0){
+            // Check mates' names.
+            if((ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(curF->second))==0) || 
+               (args.flag("mateNamesDiffer"))){
                pairedGA++;
             }else{
                pairedBad++;
@@ -218,13 +226,16 @@ string programDescription =
             }
          }
          // Unless pairedBad>0 the alignment is valid.
-         if((!storedValidA) && (pairedBad == 0)){
+         // If excludeSingletons is set, only use paired alignment and alignments of single-end reads.
+         if((!storedValidA) && 
+            (((!args.flag("excludeSingletons")) && (pairedBad == 0)) ||
+             (pairedBad + firstGA + secondGA + weirdGA == 0))){
             validAF->copyFragment(curF);
             storedValidA=true;
          }
       }
       // Next fragment is different.
-      if(ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0){
+      if(ns_parseAlignment::nextFragDiffers(curF, nextF, args.flag("mateNamesDiffer"))){
          Ntotal++;
          allGA = singleGA + pairedGA + firstGA +secondGA+ weirdGA;
          if( allGA == 0 ){ // No good alignment.
@@ -242,6 +253,12 @@ string programDescription =
          }else if(maxAlignments && (allGA>maxAlignments)) {
             // This read will be ignored.
             ignoredReads.insert(bam1_qname(curF->first));
+            ignoredMaxAlignments++;
+            Nmap --;
+         }else if(args.flag("excludeSingletons") && (pairedGA + singleGA == 0)){
+            // When excluding singletons only alignments of full pair or single-end read count.
+            ignoredReads.insert(bam1_qname(curF->first));
+            ignoredSingletons++;
             Nmap --;
          }
          pairedGA = firstGA = secondGA = singleGA = weirdGA = pairedBad = 0;
@@ -255,7 +272,8 @@ string programDescription =
    }
    message("Reads: all(Ntotal): %ld  mapped(Nmap): %ld\n",Ntotal,Nmap);
    if(args.verbose)message("  %ld reads were used to estimate empirical distributions.\n",observeN);
-   if(ignoredReads.size()>0)message("  %ld reads are skipped due to having more than %ld alignments.\n",ignoredReads.size(), maxAlignments);
+   if(ignoredMaxAlignments>0)message("  %ld reads are skipped due to having more than %ld alignments.\n",ignoredMaxAlignments, maxAlignments);
+   if(ignoredSingletons>0)message("  %ld reads skipped due to having just single mate alignments.\n",ignoredSingletons);
    if(RE_noEndInfo)warning("  %ld reads that were paired, but do not have \"end\" information.\n  (is your alignment file valid?)", RE_noEndInfo);
    if(RE_weirdPairdInfo)warning("  %ld reads that were reported as both paired and single end.\n  (is your alignment file valid?)", RE_weirdPairdInfo);
    readD.writeWarnings();
@@ -283,7 +301,7 @@ string programDescription =
       error("Main: Unable to open output file.\n");
       return 1;
    }
-   outF<<"# Ntotal "<<Ntotal<<"\n# Nmap "<<Nmap<<endl;
+   outF<<"# Ntotal "<<Ntotal<<"\n# Nmap "<<Nmap<<"\n# M "<<M<<endl;
    outF<<"# LOGFORMAT (probabilities saved on log scale.)\n# r_name num_alignments (tr_id prob )^*{num_alignments}"<<endl;
    outF.precision(9);
    outF<<scientific;
@@ -305,7 +323,7 @@ string programDescription =
          // Read reads while the name is the same.
          while(ns_parseAlignment::readNextFragment(samData,curF,nextF)){
             DEBUG_AT(" ignore\n");
-            if(ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0)
+            if(ns_parseAlignment::nextFragDiffers(curF, nextF, args.flag("mateNamesDiffer")))
                break;
          }
          readC++;
@@ -315,48 +333,53 @@ string programDescription =
       if( !(curF->first->core.flag & BAM_FUNMAP) ){
          DEBUG_AT("M");
          // (at least) The first read was mapped.
-         if(curF->paired && (ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(curF->second))!=0)){
+         // Check mates' names.
+         if(curF->paired && (ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(curF->second))!=0) && (!args.flag("mateNamesDiffer"))){
             if(RE_nameMismatch == 0){
                warning("Paired read name mismatch: %s %s\n",bam1_qname(curF->first), bam1_qname(curF->second));
             }
             RE_nameMismatch++;
             if(RE_nameMismatch>10)break;
             invalidAlignment = true;
-         }else if(readD.getP(curF, prob, probNoise)){
-            // We calculated valid probabilities for this alignment.   
-            // Add alignment:
-            alignments.push_back(ns_parseAlignment::TagAlignment(curF->first->core.tid+1, prob, probNoise));
-            // Update counters:
-            if( curF->paired ) {
-               // Fragment's both reads are mapped as a pair.
-               pairedN++;
-               DEBUG_AT(" P\n");
-            }else {
-               if (curF->first->core.flag & BAM_FPAIRED) {
-                  // Read was part of pair (meaning that the other is unmapped).
-                  if (curF->first->core.flag & BAM_FREAD1) {
-                     firstN++;
-                     DEBUG_AT(" 1\n");
-                  } else if (curF->first->core.flag & BAM_FREAD2) {
-                     secondN++;
-                     DEBUG_AT(" 2\n");
+         }else if((!args.flag("excludeSingletons")) || curF->paired || (! (curF->first->core.flag & BAM_FPAIRED))){
+            // We only calculate probabilties and add alignments if: 
+            // (singletons are not exlucded) OR  (it is a proper paired alignments) OR (it is single-end read)
+            if(readD.getP(curF, prob, probNoise)){
+               // We calculated valid probabilities for this alignment.   
+               // Add alignment:
+               alignments.push_back(ns_parseAlignment::TagAlignment(curF->first->core.tid+1, prob, probNoise));
+               // Update counters:
+               if( curF->paired ) {
+                  // Fragment's both reads are mapped as a pair.
+                  pairedN++;
+                  DEBUG_AT(" P\n");
+               }else {
+                  if (curF->first->core.flag & BAM_FPAIRED) {
+                     // Read was part of pair (meaning that the other is unmapped).
+                     if (curF->first->core.flag & BAM_FREAD1) {
+                        firstN++;
+                        DEBUG_AT(" 1\n");
+                     } else if (curF->first->core.flag & BAM_FREAD2) {
+                        secondN++;
+                        DEBUG_AT(" 2\n");
+                     } else {
+                        weirdN ++;
+                        DEBUG_AT(" W\n");
+                     }
                   } else {
-                     weirdN ++;
-                     DEBUG_AT(" W\n");
+                     // Read is single end, with valid alignment.
+                     singleN++;
+                     DEBUG_AT(" S\n");
                   }
-               } else {
-                  // Read is single end, with valid alignment.
-                  singleN++;
-                  DEBUG_AT(" S\n");
                }
+            } else {
+               // Calculation of alignment probabilities failed.
+               invalidAlignment = true;
             }
-         } else {
-            // Calculation of alignment probabilities failed.
-            invalidAlignment = true;
          }
       }else DEBUG_AT("UNMAP\n");
       // next fragment has different name
-      if(ns_parseAlignment::readNameCmp(bam1_qname(curF->first), bam1_qname(nextF->first))!=0){
+      if(ns_parseAlignment::nextFragDiffers(curF, nextF, args.flag("mateNamesDiffer"))){
          DEBUG_AT("  last\n");
          readC++;
          if(args.verbose){ if(progressLog(readC,Ntotal,10,' '))timer.split(1,'m');}
@@ -398,7 +421,7 @@ string programDescription =
    timer.split(0,'m');
    if(args.verbose){
       message("Analyzed %ld reads:\n",readC);
-      if(! ignoredReads.empty())message(" %ld ignored due to --limitA flag\n",ignoredReads.size());
+      if(ignoredMaxAlignments>0)message(" %ld ignored due to --limitA flag\n",ignoredMaxAlignments);
       if(invalidN>0)message(" %ld had only invalid alignments (see warnings)\n",invalidN);
       if(noN>0)message(" %ld had no alignments\n",noN);
       message("The rest had %ld alignments:\n",pairedN+singleN+firstN+secondN+weirdN);
@@ -462,6 +485,12 @@ int main(int argc,char* argv[]){
 
 namespace ns_parseAlignment {
 
+bool nextFragDiffers(const ns_rD::fragmentP curF, const ns_rD::fragmentP nextF, bool mateNamesDiffer){//{{{
+   if(readNameCmp(bam1_qname(curF->first), bam1_qname(nextF->first))==0) return false;
+   if(nextF->paired && mateNamesDiffer && (readNameCmp(bam1_qname(curF->first), bam1_qname(nextF->second))==0)) return false;
+   return true;
+}//}}}
+
 long readNameCmp(const char *str1, const char *str2){//{{{
    // Check first character(so that we can look back later).
    if(*str1 != *str2)return *str1 - *str2;
@@ -498,21 +527,20 @@ bool readNextFragment(samfile_t* samData, ns_rD::fragmentP &cur, ns_rD::fragment
       *(next->first->data) = '\0';
       return currentOK;
    }
-   // if paired then try reading second pair
-   if( !(next->first->core.flag & BAM_FPROPER_PAIR) || 
-       (samread(samData,next->second)<0)){
-      next->paired = false;
-   }else{
-      /* look for last read 
-      ignored -- expecting always only singles and pairs
-      THIS WOULD NOT WORK 
-        - because SAM FLAG does not indicate whether it's first or last read of a pair, but which "file" is the read from 
-        - this was observed from bowtie alignment data
-      while( !(next->second->core.flag & BAM_FREAD2) &&
-             (samread(samData,next->second)>=0)) ;
-      */
+   // Read proper pairs OR pairs with both mates unmapped into one fragment.
+   if((next->first->core.flag & BAM_FPROPER_PAIR) ||
+      ((next->first->core.flag & BAM_FPAIRED) &&
+       (next->first->core.flag & BAM_FUNMAP) &&
+       (next->first->core.flag & BAM_FMUNMAP))){
       next->paired = true;
+      // Try reading second mate.
+      if(samread(samData,next->second)<0) next->paired = false;
+   }else{
+      next->paired = false;
    }
+   /* Note:
+    * Relying on BAM_FREAD2 as being the last read of template probably does not work.
+    */
    return currentOK;
 }//}}}
 

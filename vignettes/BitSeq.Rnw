@@ -6,13 +6,14 @@
 \usepackage{url}
 %\usepackage[authoryear,round]{natbib}
 
+<<style, eval=TRUE, echo=FALSE, results=tex>>=
+BiocStyle::latex()
+@
+
 \title{BitSeq User Guide}
 \author{Peter Glaus, Antti Honkela and Magnus Rattray}
 
-\newcommand{\Rfunction}[1]{{\texttt{#1}}}
-\newcommand{\Robject}[1]{{\texttt{#1}}}
-\newcommand{\Rpackage}[1]{{\textit{#1}}}
-\newcommand{\bitseq}{\Rpackage{BitSeq}}
+\newcommand{\bitseq}{\Biocpkg{BitSeq}}
 
 \newcommand{\Rvar}[1]{{\texttt{#1}}}
 
@@ -69,8 +70,8 @@ The transcriptome Fasta file can be either downloaded from Ensembl website \foot
 or constructed by UCSC genome browser at \url{http://genome.ucsc.edu/cgi-bin/hgTables}. 
 In this example we will use file \FILE{ensSelect1.fasta} which contains sequence of all transcripts for five genes from the Ensembl homo sapiens, release 65 annotation.
 
-For the alignment of reads to transcriptome we recommend using software \COMM{bowtie}, which is able to report all valid alignments for all the reads.
-The following \COMM{bash} commands can be used to create the SAM file with alignments:
+For the alignment of reads to transcriptome we recommend using software \software{bowtie}, which is able to report all valid alignments for all the reads.
+The following \software{bash} commands can be used to create the SAM file with alignments:
 \begin{Schunk}
 \begin{Sinput}
 # create bowtie reference index for the annotation
@@ -317,7 +318,7 @@ This produces three extra files, the first two \FILE{data-C0.est}, \FILE{data-C1
 
 \section{External use of \bitseq{}}
 
-All major computation in \bitseq{} is executed by running \COMM{C++} libraries, and there is also a \COMM{C++} only implementation of \bitseq{} package available at \url{http://code.google.com/p/bitseq/}.
+All major computation in \bitseq{} is executed by running \COMM{C++} libraries, and there is also a \COMM{C++} only implementation of \bitseq{} package available at \url{https://github.com/BitSeq/BitSeq}.
 The standalone package can be particularly useful for clusters without support for R or Bioconductor. 
 
 In order to facilitate the use of \COMM{C++} version of the package, the relevant functions in R interface provide \Rvar{pretend} option.

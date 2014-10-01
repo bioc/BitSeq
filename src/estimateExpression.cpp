@@ -24,6 +24,7 @@
 #define SS second
 
 //#define LOG_NEED
+//#define LOG_RHAT
 TranscriptInfo trInfo;
 
 long  M;//, mAll; // M : number of transcripts (include transcript 0 ~ Noise)
@@ -40,7 +41,7 @@ void clearDataEE(){
 TagAlignments* readData(const ArgumentParser &args) {//{{{
    long i,j,num,tid;
    double prb;
-   long Ntotal=0,Nmap=0;
+   long Ntotal=0,Nmap=0,probM=0;
    string readId,strand,blank;
    ifstream inFile;
    MyTimer timer;
@@ -50,10 +51,12 @@ TagAlignments* readData(const ArgumentParser &args) {//{{{
    inFile.open(args.args()[0].c_str());
    FileHeader fh(&inFile);
    ns_fileHeader::AlignmentFileType format;
-   if((!fh.probHeader(&Nmap,&Ntotal,&format)) || (Nmap ==0)){//{{{
+   if((!fh.probHeader(&Nmap,&Ntotal,&probM,&format)) || (Nmap ==0)){//{{{
       error("Prob file header read failed.\n");
       return NULL;
    }//}}}
+   // Use number of transcripts from prob file if it is higher.
+   if(probM>M)M = probM;
    message("N mapped: %ld\n",Nmap);
    messageF("N total:  %ld\n",Ntotal);
    if(args.verb())message("Reading alignments.\n");
@@ -153,6 +156,19 @@ void MCMC(TagAlignments *alignments,gibbsParameters &gPar,ArgumentParser &args){
    vector<pairD> betwVar(M),withVar(M),s2j(M),totAverage(M),av,var;
    vector<pair<pairD,long> > rHat2(M);
    // }}}
+   // Names: {{{
+   stringstream sstr;
+   #ifdef LOG_RHAT
+      sstr.str("");
+      sstr<<args.getS("outFilePrefix")<<".rhatLog";
+      string rhatLogFile = sstr.str();
+   #endif
+   #ifdef LOG_NEED
+      sstr.str("");
+      sstr<<args.getS("outFilePrefix")<<".effLog";
+      string effLogFile = sstr.str();
+   #endif
+   // }}}
    // Init: {{{
    DEBUG(message("Initialization:\n"));
    samplesN=gPar.samplesN();
@@ -168,7 +184,8 @@ void MCMC(TagAlignments *alignments,gibbsParameters &gPar,ArgumentParser &args){
          samplers[j] = new GibbsSampler;
    }
 
-   timer.start();;
+   timer.start();
+   timer.start(1);
    if(args.isSet("seed"))seed=args.getL("seed");
    else seed = time(NULL);
    if(args.verbose)message("seed: %ld\n",seed);
@@ -206,6 +223,7 @@ void MCMC(TagAlignments *alignments,gibbsParameters &gPar,ArgumentParser &args){
       }
    }
 #endif
+   totalSamples = gPar.burnIn();
    message("Burn in: %ld DONE. ",gPar.burnIn());
    DEBUG(message(" reseting samplers after BurnIn\n"));
    for(i=0;i<chainsN;i++){
@@ -242,7 +260,7 @@ void MCMC(TagAlignments *alignments,gibbsParameters &gPar,ArgumentParser &args){
          }
       }
 #endif
-      totalSamples+=samplesN*chainsN;
+      totalSamples += samplesN;
       message("\nSampling DONE. ");
       timer.split(0,'m');
       //}}}
@@ -318,13 +336,23 @@ void MCMC(TagAlignments *alignments,gibbsParameters &gPar,ArgumentParser &args){
       if(args.flag("gibbs"))message("  Mean thetaAct (noise parameter)\n   %lf\n",totAverage[0].FF);
       messageF("\n");
       //}}}
+      // Log rHat if necessary. {{{
+      #ifdef LOG_RHAT
+         ofstream rhatLog(rhatLogFile.c_str(), ofstream::app);
+         rhatLog<<totalSamples<<" "<<(long)timer.getTime(1);
+         for(i=1;i<M;i++){
+            rhatLog<<" "<<sqrt(rHat2[i].FF.FF);
+         }
+         rhatLog<<endl;
+         rhatLog.close();
+      #endif
+      // }}}
       // Increase sample size and start over: {{{
       if(quitNext){// Sampling iterations end {{{
          if(sqrt(rHat2[0].FF.FF) > gPar.targetScaleReduction()){
             message("WARNING: Following transcripts failed to converge entirely\n   (however the estimates might still be usable):\n");
             long countUncoverged=0;
-            stringstream sstr;
-            sstr.str();
+            sstr.str("");
             sstr<<"# unconverged_transcripts: ";
             for(i=0;(i<M) && (sqrt(rHat2[i].FF.FF) > gPar.targetScaleReduction());i++){
                sstr<<rHat2[i].SS<<" ("<<sqrt(rHat2[i].FF.FF)<<") ";
@@ -356,9 +384,7 @@ void MCMC(TagAlignments *alignments,gibbsParameters &gPar,ArgumentParser &args){
          } 
          // log the number of effective samples, only when testing... //{{{
          #ifdef LOG_NEED
-            stringstream sstr;
-            sstr<<args.getS("outFilePrefix")<<".effLog";
-            ofstream effLog(sstr.str().c_str());
+            ofstream effLog(effLogFile.c_str());
             for(i=1;i<M;i++){
                effLog<<needS[rHat2[i].SS]<<" "<<sqrt(rHat2[i].FF.FF)<<" "<<samplesHave*betwVar[rHat2[i].SS].FF<<" "<<withVar[rHat2[i].SS].FF<<" "<<rHat2[i].SS<<endl;
             }
@@ -376,7 +402,7 @@ void MCMC(TagAlignments *alignments,gibbsParameters &gPar,ArgumentParser &args){
             // Prepare for producing samples if Rhat^2<target scale reduction
             // OR reached samplesNmax
             // OR produced too many samples (>500 000)
-         if((totalSamples < 5000000) && (rMean.FF > gPar.targetScaleReduction())){
+         if((totalSamples*chainsN < 5000000) && (rMean.FF > gPar.targetScaleReduction())){
             samplesN *= 2;
          }else{
             quitNext = true;
@@ -393,7 +419,6 @@ void MCMC(TagAlignments *alignments,gibbsParameters &gPar,ArgumentParser &args){
          if(samplesN<samplesSave){
             samplesSave = samplesN;
          }
-         stringstream sstr;
          for(j=0;j<chainsN;j++){
             sstr.str("");
             sstr<<args.getS("outFilePrefix")<<"."<<args.getS("outputType")<<"S-"<<j;
@@ -475,7 +500,7 @@ void MCMC(TagAlignments *alignments,gibbsParameters &gPar,ArgumentParser &args){
    }
 //   delete [] samplers;
    //}}}
-   message("Total samples: %ld\n",totalSamples);
+   message("Total samples: %ld\n",totalSamples*chainsN);
 }//}}}
 
 extern "C" int estimateExpression(int *argc, char* argv[]) {//{{{
@@ -507,13 +532,6 @@ string programDescription =
    if(args.verbose)buildTime(argv[0],__DATE__,__TIME__);
    // }}}
    MyTimer timer;
-#ifdef SUPPORT_OPENMP
-   if(args.isSet("procN"))
-      omp_set_num_threads(args.getL("procN"));
-   else
-      omp_set_num_threads(args.getL("MCMC_chainsN"));
-#endif
-
    gibbsParameters gPar;
    TagAlignments *alignments=NULL;
 //{{{ Initialization:
@@ -524,6 +542,13 @@ string programDescription =
    }
    args.updateS("outputType", ns_expression::getOutputType(args));
    if(args.verbose)gPar.getAllParameters();
+#ifdef SUPPORT_OPENMP
+   if(args.isSet("procN"))
+      omp_set_num_threads(args.getL("procN"));
+   else
+      omp_set_num_threads(gPar.chainsN());
+#endif
+
 
    //}}}
    // {{{ Read transcriptInfo and .prob file 
@@ -560,7 +585,8 @@ string programDescription =
    }
    //}}}
    delete alignments;
-   if(args.verbose){message("DONE. "); timer.split(0,'m');}
+   message("DONE. ");
+   timer.split(0,'m');
    return 0;
 }//}}}
 

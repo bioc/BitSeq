@@ -1,6 +1,6 @@
 
 
-parseAlignment <- function( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL, expressionFile=NULL, readsN=NULL, uniform=TRUE, limitA=NULL, lenMu=NULL, lenSigma=NULL, verbose=NULL, veryVerbose=NULL, procN=NULL, pretend=FALSE){
+parseAlignment <- function( alignFile, outFile, trSeqFile, inputFormat=NULL, trInfoFile=NULL, expressionFile=NULL, readsN=NULL, uniform=TRUE, limitA=NULL, lenMu=NULL, lenSigma=NULL, excludeSingletons=NULL, mateNamesDiffer=NULL, verbose=NULL, veryVerbose=NULL, procN=NULL, pretend=FALSE){
    args <- c('parseAlignment', alignFile, '--outFile', outFile , '--trSeqFile', trSeqFile)
    if (!is.null(inputFormat)) {
       args <- c(args, '--format', inputFormat)
@@ -25,6 +25,12 @@ parseAlignment <- function( alignFile, outFile, trSeqFile, inputFormat=NULL, trI
    }
    if ((!is.null(uniform)) && (uniform)) {
       args <- c(args, '--uniform')
+   }
+   if ((!is.null(excludeSingletons)) && (excludeSingletons)) {
+      args <- c(args, '--excludeSingletons')
+   }
+   if ((!is.null(mateNamesDiffer)) && (mateNamesDiffer)) {
+      args <- c(args, '--mateNamesDiffer')
    }
    if (!is.null(verbose) && (verbose)) {
       args <- c(args, '--verbose')
