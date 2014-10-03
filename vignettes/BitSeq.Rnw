@@ -28,7 +28,7 @@ BiocStyle::latex()
 \maketitle
 
 <<echo=FALSE, eval=TRUE>>=
-options(width = 40)
+options(width = 60)
 @
 
 \section{Abstract}
@@ -127,8 +127,7 @@ samples1 <- loadSamples(res1$fn)
 @
 Following command produces plot showing correlation between two transcript expression estimates: 
 <<eval=FALSE >>=
-plot( unlist(s2["ENST00000436661",]), 
-   unlist(s2["ENST00000373501",]))
+plot( unlist(s2["ENST00000436661",]), unlist(s2["ENST00000373501",]))
 @
 
 The \Rfunction{getExpression} function first computes probabilities for every alignment and then uses this data in Markov chain Monte Carlo algorithm which samples from the posterior distribution of transcript expression.
@@ -148,8 +147,7 @@ The function again returns \Robject{list} with first item \Rvar{pplr} containing
 The second item \Rvar{fn} contains list of filenames with the names of produced files.
 Using the option\Rvar{samples=TRUE}, the function creates also files containing the condition mean expression samples.
 <<>>=
-de1 <- getDE(list(cond1Files, cond2Files), 
-   samples=TRUE)
+de1 <- getDE(list(cond1Files, cond2Files), samples=TRUE)
 print(de1$fn)
 @
 
@@ -271,9 +269,7 @@ allConditions = list(c("data-c0b0.rpkm","data-c0b1.rpkm"),
 The estimation of expression specific hyperparameters for the DE model requires pre computing joint mean expression over all experiments using the \Rfunction{getMeanVariance} function. 
 As the DE model uses logged expression samples, we have to compute the mean and variance of logged expression samples:
 <<>>=
-getMeanVariance(allConditions, 
-   outFile = "data.means",
-   log = TRUE )
+getMeanVariance(allConditions, outFile = "data.means", log = TRUE )
 @
 
 \subsubsection{Estimating model hyperparameters}
@@ -293,9 +289,7 @@ The model for Differential Expression analysis uses the posterior samples from e
 Function \Rfunction{estimateDE} computes the samples and uses them to compute the Probability of Positive Log Ratio, which is the probability of a transcript being up-regulated in the first condition as well as inverse probability of transcript being down-regulated in the first condition.
 The PPLR, mean $\log_2$ fold change with confidence intervals and mean condition mean expression are saved into the final output file with extension \FILE{.pplr} and prefix specified by the option \Rvar{outFile}:
 <<>>=
-estimateDE(allConditions,
-   outFile = "data",
-   parFile = "data.par" )
+estimateDE(allConditions, outFile = "data", parFile = "data.par" )
 ##
 ## pretend run with three conditions and normalization constants
 ##
@@ -309,9 +303,7 @@ estimateDE(list( allConditions[[1]], allConditions[[2]], cond3Files),
 
 In case one is interested in the condition mean expression samples as well, they can be obtained by using the \Rvar{samples} flag:
 <<>>=
-estimateDE(allConditions,
-   outFile = "data",
-   parFile = "data.par",
+estimateDE(allConditions, outFile = "data", parFile = "data.par",
    samples = TRUE )
 @
 This produces three extra files, the first two \FILE{data-C0.est}, \FILE{data-C1.est} containing the condition means for each condition and the third file \FILE{data.estVar} containing samples of inferred variance for the first condition.
@@ -334,6 +326,11 @@ res1 <- getExpression("data-c0b0.sam",
    pretend=TRUE)
 @
 
+\section{Session Info}
+
+<<sessionInfo>>=
+sessionInfo()
+@ 
 
 \bibliographystyle{plainnat}
 %\bibliography{bitseq}
