@@ -1,8 +1,8 @@
 CHANGES IN VERSION 1.10.0 (2014-10-01)
 --------------------------------------
-This release corresponds to C++ BitSeq version 0.7.5.
 
 NEW FEATURES
+ o This release corresponds to C++ BitSeq version 0.7.5.
  o adding "unstranded" option to parseAlignment, to allow read pairs
    with various directions to be used
  o enable excluding singletons (single-mate alignments of paired reads)
