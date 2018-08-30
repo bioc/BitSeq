@@ -49,8 +49,9 @@ For citing \bitseq{} in publications please refer to the manuscript above and to
 The recommended way to install \bitseq{} is to use the \Rfunction{biocLite} function available from the bioconductor website.
 
 <<eval=FALSE >>=
-source("http://www.bioconductor.org/biocLite.R")
-biocLite("BitSeq")
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+BiocManager::install("BitSeq")
 @
 
 To load the package start R and run
