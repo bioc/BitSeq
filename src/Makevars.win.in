@@ -1,13 +1,10 @@
-# This should set SAM_INCLUDE to point to location Rsamtools.mk e.g.:
-# SAM_INCLUDE=F:/PROGRA~1/R/R-2.14.2/library/Rsamtools/usretc/i386/Rsamtools.mk
-
-SAMVARS=$(shell echo 'cat(system.file("usretc", .Platform[["r_arch"]],\
-    "Rsamtools.mk", package="Rsamtools", mustWork=TRUE))' |\
+RHTSLIB_LIBS=$(shell echo 'Rhtslib::pkgconfig("PKG_LIBS")'|\
     "${R_HOME}/bin/R" --vanilla --slave)
-include $(SAMVARS)
+RHTSLIB_CPPFLAGS=$(shell echo 'Rhtslib::pkgconfig("PKG_CPPFLAGS")'|\
+    "${R_HOME}/bin/R" --vanilla --slave)
 
-PKG_LIBS=$(SAMTOOLS_LIBS)
-PKG_CPPFLAGS=$(SAMTOOLS_CPPFLAGS)
+PKG_LIBS=$(RHTSLIB_LIBS)
+PKG_CPPFLAGS=$(RHTSLIB_CPPFLAGS)
 
 PKG_CPPFLAGS+=@DEF_VERSION@ -DBIOC_BUILD  -I.
 

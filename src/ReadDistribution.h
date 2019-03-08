@@ -10,8 +10,8 @@ using namespace std;
 #include "TranscriptExpression.h"
 #include "TranscriptSequence.h"
 
-#include "samtools/bam.h"
-#include "samtools/sam.h"
+#include "bam.h"
+#include "sam.h"
 
 namespace ns_rD {
 

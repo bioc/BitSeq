@@ -1,4 +1,3 @@
-import(zlibbioc)
 useDynLib("BitSeq")
 
 import(S4Vectors)

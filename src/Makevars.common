@@ -1,4 +1,6 @@
 OBJECTS= \
+   sam.o \
+   bam_plbuf.o \
    ArgumentParser.o \
    CollapsedSampler.o \
    common.o \
