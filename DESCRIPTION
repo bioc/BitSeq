@@ -1,13 +1,9 @@
 Package: BitSeq
 Type: Package
-Depends: Rsamtools (>= 1.99.3)
-Imports: S4Vectors, IRanges
-LinkingTo: Rhtslib (>= 1.15.5)
-Suggests: edgeR, DESeq, BiocStyle
 Title: Transcript expression inference and differential expression
         analysis for RNA-seq data
-Version: 1.29.0
-Date: 2014-10-03
+Version: 1.29.1
+Date: 2019-10-12
 Author: Peter Glaus, Antti Honkela and Magnus Rattray
 Maintainer: Antti Honkela <antti.honkela@hiit.fi>, Panagiotis Papastamoulis <panagiotis.papastamoulis@manchester.ac.uk>
 Description: The BitSeq package is targeted for transcript expression
@@ -22,7 +18,11 @@ Description: The BitSeq package is targeted for transcript expression
         expression and ranking the transcripts based on the likelihood
         of differential expression.
 License: Artistic-2.0 + file LICENSE
-Packaged: 2012-03-16 21:20:24 UTC; mcarlson
-biocViews: ImmunoOncology, GeneExpression, DifferentialExpression, Sequencing, RNASeq,
-	   Bayesian, AlternativeSplicing, DifferentialSplicing,
-	   Transcription
+biocViews: ImmunoOncology, GeneExpression, DifferentialExpression, Sequencing,
+        RNASeq, Bayesian, AlternativeSplicing, DifferentialSplicing,
+        Transcription
+Depends: Rsamtools (>= 1.99.3)
+Imports: S4Vectors, IRanges
+LinkingTo: Rhtslib (>= 1.15.5)
+SystemRequirements: GNU make
+Suggests: edgeR, DESeq, BiocStyle
