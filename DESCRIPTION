@@ -2,10 +2,10 @@ Package: BitSeq
 Type: Package
 Title: Transcript expression inference and differential expression
         analysis for RNA-seq data
-Version: 1.31.0
-Date: 2019-10-12
+Version: 1.31.1
+Date: 2020-04-04
 Author: Peter Glaus, Antti Honkela and Magnus Rattray
-Maintainer: Antti Honkela <antti.honkela@hiit.fi>, Panagiotis Papastamoulis <panagiotis.papastamoulis@manchester.ac.uk>
+Maintainer: Antti Honkela <antti.honkela@helsinki.fi>, Panagiotis Papastamoulis <papastamoulis@aueb.gr>
 Description: The BitSeq package is targeted for transcript expression
         analysis and differential expression analysis of RNA-seq data
         in two stage process. In the first stage it uses Bayesian
