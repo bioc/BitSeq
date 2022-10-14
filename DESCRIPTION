@@ -2,7 +2,7 @@ Package: BitSeq
 Type: Package
 Title: Transcript expression inference and differential expression
         analysis for RNA-seq data
-Version: 1.41.0
+Version: 1.41.1
 Date: 2020-11-26
 Author: Peter Glaus, Antti Honkela and Magnus Rattray
 Maintainer: Antti Honkela <antti.honkela@helsinki.fi>, Panagiotis Papastamoulis <papastamoulis@aueb.gr>
@@ -26,3 +26,4 @@ Imports: S4Vectors, IRanges, methods, utils
 LinkingTo: Rhtslib (>= 1.15.5)
 SystemRequirements: GNU make
 Suggests: BiocStyle
+PackageStatus: Deprecated
